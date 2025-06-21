@@ -8,6 +8,9 @@ const openai = new OpenAI({
 
 export async function parseResumeWithAI(resumeText: string): Promise<ParsedResumeData> {
   try {
+    // Truncate resume text for parsing to prevent token limit issues
+    const truncatedText = resumeText.length > 8000 ? resumeText.substring(0, 8000) + "..." : resumeText;
+    
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -24,7 +27,7 @@ export async function parseResumeWithAI(resumeText: string): Promise<ParsedResum
         },
         {
           role: "user",
-          content: `Parse this resume text:\n\n${resumeText}`
+          content: `Parse this resume text:\n\n${truncatedText}`
         }
       ],
       response_format: { type: "json_object" },
@@ -49,9 +52,12 @@ export async function generateJobVector(job: { title: string; description: strin
   try {
     const jobText = `${job.title} ${job.description} ${job.requirements} ${job.skills.join(' ')}`;
     
+    // Truncate if too long to prevent token limit issues
+    const finalText = jobText.length > 6000 ? jobText.substring(0, 6000) + "..." : jobText;
+    
     const response = await openai.embeddings.create({
       model: "text-embedding-ada-002",
-      input: jobText,
+      input: finalText,
     });
 
     return response.data[0].embedding;
@@ -63,11 +69,19 @@ export async function generateJobVector(job: { title: string; description: strin
 
 export async function generateResumeVector(resumeText: string, parsedData: ParsedResumeData): Promise<number[]> {
   try {
-    const combinedText = `${resumeText} ${parsedData.skills.join(' ')} ${parsedData.primaryRole} ${parsedData.industries.join(' ')}`;
+    // Truncate resume text to prevent token limit issues
+    // OpenAI ada-002 has ~8192 token limit, roughly 6000 characters
+    const truncatedResumeText = resumeText.length > 4000 ? resumeText.substring(0, 4000) + "..." : resumeText;
+    const combinedText = `${truncatedResumeText} ${parsedData.skills.join(' ')} ${parsedData.primaryRole} ${parsedData.industries.join(' ')}`;
+    
+    // Final safety check - if still too long, use just the parsed data
+    const finalText = combinedText.length > 6000 ? 
+      `${parsedData.skills.join(' ')} ${parsedData.primaryRole} ${parsedData.industries.join(' ')} ${parsedData.experienceLevel}` : 
+      combinedText;
     
     const response = await openai.embeddings.create({
       model: "text-embedding-ada-002",
-      input: combinedText,
+      input: finalText,
     });
 
     return response.data[0].embedding;

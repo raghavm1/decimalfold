@@ -106,7 +106,8 @@ The application uses three main tables:
   - Integrated OpenAI GPT-4o for resume parsing and vector generation
   - Implemented cosine similarity matching algorithm
   - Created professional Eightfold-inspired UI with split-pane layout
-  - Added comprehensive file upload support (PDF, DOC, DOCX, TXT)
+  - Added comprehensive file upload support (PDF, DOCX, TXT)
+  - Fixed OpenAI token limit issues with text truncation
   - Validated end-to-end functionality with successful resume processing
 
 ## User Preferences
