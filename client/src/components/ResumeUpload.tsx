@@ -23,7 +23,16 @@ export default function ResumeUpload({ onResumeProcessed, currentResume }: Resum
       const formData = new FormData();
       formData.append('resume', file);
       
-      const response = await apiRequest('POST', '/api/resume/upload', formData);
+      const response = await fetch('/api/resume/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload failed');
+      }
+      
       return response.json();
     },
     onSuccess: (data) => {
@@ -92,7 +101,7 @@ export default function ResumeUpload({ onResumeProcessed, currentResume }: Resum
               <p className="text-lg font-medium text-slate-custom">
                 {isDragActive ? 'Drop your resume here' : 'Drop your resume here or click to browse'}
               </p>
-              <p className="text-gray-500 mt-2">Supports PDF and plain text files up to 10MB</p>
+              <p className="text-gray-500 mt-2">Supports plain text files (.txt) up to 10MB. PDF support coming soon.</p>
             </div>
             <Button type="button" className="bg-primary text-white hover:bg-blue-700">
               <Upload className="mr-2 w-4 h-4" />

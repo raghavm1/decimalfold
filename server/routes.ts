@@ -7,6 +7,7 @@ import { jobDatabase } from "./services/jobDatabase";
 import multer from "multer";
 import { z } from "zod";
 import { insertResumeSchema } from "@shared/schema";
+// PDF parsing will be added later
 
 // Configure multer for file uploads
 const upload = multer({
@@ -61,9 +62,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.file.mimetype === 'text/plain') {
         resumeText = fileBuffer.toString('utf-8');
       } else if (req.file.mimetype === 'application/pdf') {
-        // For PDF parsing, we'll need to use a PDF parser
-        // For now, we'll simulate this with the buffer content
-        resumeText = fileBuffer.toString('utf-8').replace(/[^\x20-\x7E]/g, ' ');
+        // For now, ask users to upload text files for PDF support
+        return res.status(400).json({ message: "PDF support coming soon. Please upload a text file (.txt) for now." });
+      } else if (req.file.mimetype === 'application/msword' || 
+                 req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        // For DOC/DOCX files, extract as plain text for now
+        resumeText = fileBuffer.toString('utf-8').replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
       } else {
         return res.status(400).json({ message: "Unsupported file type" });
       }
