@@ -261,7 +261,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       allJobs.forEach(job => {
         stats.byExperienceLevel[job.experienceLevel] = (stats.byExperienceLevel[job.experienceLevel] || 0) + 1;
-        stats.byIndustry[job.industry] = (stats.byIndustry[job.industry] || 0) + 1;
+        const industry = job.industry || "Technology";
+        stats.byIndustry[industry] = (stats.byIndustry[industry] || 0) + 1;
         stats.byWorkType[job.workType] = (stats.byWorkType[job.workType] || 0) + 1;
         stats.byLocation[job.location] = (stats.byLocation[job.location] || 0) + 1;
       });
@@ -285,7 +286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const jobs = await storage.getAllJobs();
-      const parsedData = JSON.parse(resume.parsedData as string);
+      const parsedData = typeof resume.parsedData === 'string' 
+        ? JSON.parse(resume.parsedData) 
+        : resume.parsedData;
       
       // Use selected vector strategy
       const vectorStrategy = VectorStrategyFactory.create(strategy);

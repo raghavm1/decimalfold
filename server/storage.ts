@@ -48,6 +48,7 @@ export class MemStorage implements IStorage {
     const job: Job = { 
       ...insertJob, 
       id, 
+      industry: insertJob.industry || "Technology",
       vector: null,
       salaryMin: insertJob.salaryMin ?? null,
       salaryMax: insertJob.salaryMax ?? null,
