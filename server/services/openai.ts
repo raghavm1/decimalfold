@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import OpenAI from "openai";
 import type { ParsedResumeData } from "@shared/schema";
 
