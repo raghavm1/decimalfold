@@ -7,7 +7,9 @@ import { jobDatabase } from "./services/jobDatabase";
 import multer from "multer";
 import { z } from "zod";
 import { insertResumeSchema } from "@shared/schema";
-// PDF parsing will be added later
+import mammoth from "mammoth";
+import * as fs from "fs";
+import * as path from "path";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -62,12 +64,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.file.mimetype === 'text/plain') {
         resumeText = fileBuffer.toString('utf-8');
       } else if (req.file.mimetype === 'application/pdf') {
-        // For now, ask users to upload text files for PDF support
-        return res.status(400).json({ message: "PDF support coming soon. Please upload a text file (.txt) for now." });
-      } else if (req.file.mimetype === 'application/msword' || 
-                 req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        // For DOC/DOCX files, extract as plain text for now
+        try {
+          // For PDF files, attempt basic text extraction
+          // Convert buffer to string and clean up non-printable characters
+          const rawText = fileBuffer.toString('binary');
+          const extractedText = rawText
+            .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\xFF]/g, ' ') // Remove non-printable chars
+            .replace(/\s+/g, ' ') // Normalize whitespace
+            .trim();
+          
+          // Look for readable text patterns
+          const readableText = extractedText.match(/[a-zA-Z\s\d\.\,\;\:\!\?\-\(\)]{20,}/g);
+          if (readableText && readableText.length > 0) {
+            resumeText = readableText.join(' ').trim();
+          } else {
+            resumeText = extractedText;
+          }
+          
+          if (resumeText.length < 50) {
+            return res.status(400).json({ 
+              message: "Unable to extract sufficient text from PDF. Please try uploading as a text file or DOCX format for better results." 
+            });
+          }
+        } catch (error) {
+          console.error("PDF processing error:", error);
+          return res.status(400).json({ message: "Failed to process PDF file" });
+        }
+      } else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        try {
+          // Extract text from DOCX using mammoth
+          const result = await mammoth.extractRawText({ buffer: fileBuffer });
+          resumeText = result.value.trim();
+          
+          if (result.messages && result.messages.length > 0) {
+            console.log("DOCX parsing messages:", result.messages);
+          }
+          
+          if (resumeText.length < 50) {
+            return res.status(400).json({ message: "Unable to extract sufficient text from DOCX file" });
+          }
+        } catch (error) {
+          console.error("DOCX parsing error:", error);
+          return res.status(400).json({ message: "Failed to parse DOCX file" });
+        }
+      } else if (req.file.mimetype === 'application/msword') {
+        // For legacy DOC files, try basic text extraction
         resumeText = fileBuffer.toString('utf-8').replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (resumeText.length < 50) {
+          return res.status(400).json({ message: "Unable to extract text from DOC file. Please try uploading as DOCX or TXT format." });
+        }
       } else {
         return res.status(400).json({ message: "Unsupported file type" });
       }
