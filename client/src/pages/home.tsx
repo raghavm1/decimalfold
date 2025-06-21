@@ -4,6 +4,7 @@ import StatsOverview from "@/components/StatsOverview";
 import JobListings from "@/components/JobListings";
 import ResumeUpload from "@/components/ResumeUpload";
 import JobMatches from "@/components/JobMatches";
+import JobGenerator from "@/components/JobGenerator";
 import type { Job, JobWithMatch, MatchingStats, ParsedResumeData } from "@shared/schema";
 import { Bot, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ export default function Home() {
     avgMatchScore: "-",
     processingTime: "0s"
   });
+  const [showGenerator, setShowGenerator] = useState(false);
 
   const { data: jobs = [], isLoading: jobsLoading } = useQuery<Job[]>({
     queryKey: ["/api/jobs"],

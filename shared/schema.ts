@@ -16,6 +16,7 @@ export const jobs = pgTable("jobs", {
   skills: text("skills").array().notNull(),
   postedDate: text("posted_date").notNull(),
   companyLogo: text("company_logo"),
+  industry: text("industry").notNull().default("Technology"),
   vector: real("vector").array(), // Vector representation for similarity matching
 });
 

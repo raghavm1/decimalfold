@@ -101,13 +101,16 @@ The application uses three main tables:
 - File storage can be moved to cloud services for larger files
 
 ## Recent Changes
-- June 21, 2025: Completed AI-powered job matching application
+- June 21, 2025: Completed AI-powered job matching application with scalability features
   - Built full-stack application with 48 diverse job positions
   - Integrated OpenAI GPT-4o for resume parsing and vector generation
   - Implemented cosine similarity matching algorithm
   - Created professional Eightfold-inspired UI with split-pane layout
   - Added comprehensive file upload support (PDF, DOCX, TXT)
   - Fixed OpenAI token limit issues with text truncation
+  - Added scalable job generation system (1 to 100k jobs)
+  - Implemented multiple vectorizing strategies (TF-IDF, Skill-based, Hybrid)
+  - Created comprehensive README with setup instructions and package documentation
   - Validated end-to-end functionality with successful resume processing
 
 ## User Preferences
