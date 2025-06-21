@@ -299,4 +299,4 @@ Check the console logs for detailed error messages and API response information.
 
 ### macOS Rosetta Issues
 
-If you're running on Apple Silicon (M1/M2/M3 Macs), some Node.js modules might have compatibility issues. The dotenv loading problem can sometimes be related to architecture-specific builds.
+If you're running on Apple Silicon (M1/M2/M3 Macs), some Node.js modules might have compatibility issues. The dotenv loading problem can sometimes be related to architecture-specific builds. You need to clean reinstall your dependencies outside Rosetta to get the correct native binary.
