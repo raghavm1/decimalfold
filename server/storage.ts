@@ -1,4 +1,5 @@
 import { jobs, resumes, jobMatches, type Job, type Resume, type JobMatch, type InsertJob, type InsertResume, type InsertJobMatch } from "@shared/schema";
+import { databaseStorage } from "./storage-database.js";
 
 export interface IStorage {
   // Job operations
@@ -106,4 +107,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Use database storage instead of in-memory storage
+export const storage = databaseStorage;

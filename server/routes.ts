@@ -6,6 +6,7 @@ import { findTopMatches } from "./services/vectorMatcher";
 import { jobDatabase } from "./services/jobDatabase";
 import { generateJobs, generateTechJobs, generateDataJobs } from "./services/jobGenerator";
 import { VectorStrategyFactory } from "./services/vectorStrategies";
+import { PDFService } from "./services/pdfService";
 import multer from "multer";
 import { z } from "zod";
 import { insertResumeSchema, InsertJob, Job, Resume, ParsedResumeData } from "@shared/schema";
@@ -67,30 +68,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resumeText = fileBuffer.toString('utf-8');
       } else if (req.file.mimetype === 'application/pdf') {
         try {
-          // For PDF files, attempt basic text extraction
-          // Convert buffer to string and clean up non-printable characters
-          const rawText = fileBuffer.toString('binary');
-          const extractedText = rawText
-            .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\xFF]/g, ' ') // Remove non-printable chars
-            .replace(/\s+/g, ' ') // Normalize whitespace
-            .trim();
+          console.log('🔄 Processing PDF resume...');
           
-          // Look for readable text patterns
-          const readableText = extractedText.match(/[a-zA-Z\s\d\.\,\;\:\!\?\-\(\)]{20,}/g);
-          if (readableText && readableText.length > 0) {
-            resumeText = readableText.join(' ').trim();
-          } else {
-            resumeText = extractedText;
+          const pdfResult = await PDFService.extractTextFromBuffer(fileBuffer, {
+            minTextLength: 50,
+            maxTextLength: 20000,
+            preserveFormatting: true
+          });
+          
+          resumeText = pdfResult.text;
+          
+          console.log(`✅ pdf2json extracted ${resumeText.length} characters using ${pdfResult.extractionMethod}`);
+          console.log(`📊 Extraction confidence: ${pdfResult.confidence}`);
+          console.log(`📄 Processed ${pdfResult.pages} pages`);
+          
+          if (pdfResult.metadata) {
+            console.log(`📝 Total characters: ${pdfResult.metadata.totalCharacters}, Page texts: ${pdfResult.metadata.pageTexts.length}`);
           }
           
-          if (resumeText.length < 50) {
-            return res.status(400).json({ 
-              message: "Unable to extract sufficient text from PDF. Please try uploading as a text file or DOCX format for better results." 
-            });
+          // Validate that it looks like a resume
+          const validation = PDFService.validateResumeContent(resumeText);
+          console.log(`📋 Resume validation: ${validation.confidence} confidence`);
+          console.log(`🔍 Found keywords: ${validation.foundKeywords.slice(0, 5).join(', ')}...`);
+          
+          if (!validation.isValid) {
+            console.log('⚠️  Resume validation warnings:', validation.suggestions);
+            // Don't block the upload, just log warnings
+            console.log('⚠️  Proceeding with upload despite validation warnings...');
           }
+          
         } catch (error) {
           console.error("PDF processing error:", error);
-          return res.status(400).json({ message: "Failed to process PDF file" });
+          
+          // Provide more helpful error messages
+          let errorMessage = "Failed to process PDF file.";
+          if (error instanceof Error) {
+            if (error.message.includes('too short')) {
+              errorMessage = "Unable to extract sufficient text from PDF. The PDF might be scanned/image-based, password protected, or corrupted.";
+            } else if (error.message.includes('extraction failed') || error.message.includes('parsing failed')) {
+              errorMessage = "PDF text extraction failed. Please ensure the PDF contains selectable text and is not password protected.";
+            }
+          }
+          
+          return res.status(400).json({ message: errorMessage });
         }
       } else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         try {

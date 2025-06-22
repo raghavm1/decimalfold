@@ -12,11 +12,13 @@ import type {
   MatchingStats,
   ParsedResumeData,
 } from "@shared/schema";
-import { Bot, Menu, User } from "lucide-react";
+import { Bot, Menu, User, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const searchString = useSearch();
+  const { toast } = useToast();
   const [currentResume, setCurrentResume] = useState<{
     id: number;
     parsedData: ParsedResumeData;
@@ -70,6 +72,44 @@ export default function Home() {
         JSON.stringify(matchData.stats)
       );
     }
+  };
+
+  const handleClearState = () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to start over? This will clear your current resume and all job matches."
+    );
+
+    if (!confirmed) return;
+
+    // Clear current state
+    setCurrentResume(null);
+    setMatches([]);
+    setStats({
+      totalJobs: jobs.length,
+      matchesFound: 0,
+      avgMatchScore: "-",
+      processingTime: "0s",
+    });
+
+    // Clear localStorage - clear all resume-related data
+    Object.keys(localStorage).forEach((key) => {
+      if (
+        key.startsWith("resume_") ||
+        key.startsWith("matches_") ||
+        key.startsWith("stats_")
+      ) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    // Clear URL parameters
+    window.history.replaceState({}, "", window.location.pathname);
+
+    // Show success message
+    toast({
+      title: "Session cleared",
+      description: "You can now upload a new resume to get started.",
+    });
   };
 
   // Check for resumeId in URL params and restore state
@@ -145,18 +185,41 @@ export default function Home() {
             >
               Profile
             </a>
+            {currentResume && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearState}
+                className="text-gray-600 hover:text-red-600 hover:border-red-300"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Start Over
+              </Button>
+            )}
             <Button className="bg-primary text-white hover:bg-blue-700">
               <User className="mr-2 w-4 h-4" />
               Account
             </Button>
           </nav>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden text-slate-custom"
-          >
-            <Menu className="w-6 h-6" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            {currentResume && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearState}
+                className="md:hidden text-gray-600 hover:text-red-600 hover:border-red-300"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden text-slate-custom"
+            >
+              <Menu className="w-6 h-6" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -181,6 +244,7 @@ export default function Home() {
             <ResumeUpload
               onResumeProcessed={handleResumeProcessed}
               currentResume={currentResume}
+              onClearState={handleClearState}
             />
             <JobMatches
               resumeId={currentResume?.id}
