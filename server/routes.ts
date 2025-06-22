@@ -176,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const allJobs = await storage.getAllJobs();
-      const matches = findTopMatches(allJobs, resume, resume.parsedData as any, 5);
+      const matches = await findTopMatches(allJobs, resume, resume.parsedData as any, 5);
 
       // Store match results
       for (const match of matches) {

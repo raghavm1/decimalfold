@@ -77,10 +77,11 @@ export default function JobMatches({
   };
 
   const getMatchColor = (score: number): string => {
-    if (score >= 0.9) return "bg-secondary text-white";
-    if (score >= 0.8) return "bg-primary text-white";
-    if (score >= 0.7) return "bg-accent text-white";
-    return "bg-gray-500 text-white";
+    if (score >= 0.8) return "bg-green-600 text-white"; // Excellent Fit
+    if (score >= 0.6) return "bg-blue-600 text-white"; // Great Fit
+    if (score >= 0.4) return "bg-yellow-600 text-white"; // Good Fit
+    if (score >= 0.2) return "bg-orange-600 text-white"; // Fair Fit
+    return "bg-gray-500 text-white"; // Basic Fit
   };
 
   const getConfidenceIcon = (confidence: string) => {
@@ -92,6 +93,14 @@ export default function JobMatches({
       default:
         return <TrendingUp className="w-3 h-3" />;
     }
+  };
+
+  const getMatchLabel = (score: number): string => {
+    if (score >= 0.8) return "Excellent Fit";
+    if (score >= 0.6) return "Great Fit";
+    if (score >= 0.4) return "Good Fit";
+    if (score >= 0.2) return "Fair Fit";
+    return "Basic Fit";
   };
 
   return (
@@ -172,7 +181,7 @@ export default function JobMatches({
                       )}`}
                     >
                       {index === 0 && <Star className="w-3 h-3" />}
-                      {Math.round((match.matchScore || 0) * 100)}% Match
+                      {getMatchLabel(match.matchScore || 0)}
                     </div>
                   </div>
                 </div>
