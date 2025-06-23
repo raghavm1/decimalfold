@@ -2,8 +2,8 @@ import 'dotenv/config';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { jobs, resumes, jobMatches, type Job, type Resume, type JobMatch, type InsertJob, type InsertResume, type InsertJobMatch } from '@shared/schema';
-import { eq, and, or, ilike } from 'drizzle-orm';
-import { IStorage } from './storage.js';
+import { eq, and, or, ilike, count } from 'drizzle-orm';
+import { IStorage, PaginatedResult } from './storage.js';
 
 /**
  * Database storage implementation using Neon PostgreSQL
@@ -89,20 +89,102 @@ export class DatabaseStorage implements IStorage {
     return await this.db.select().from(jobs).where(and(...conditions));
   }
 
+  async searchJobsPaginated(
+    query: string,
+    experienceLevel?: string,
+    workType?: string,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<PaginatedResult<Job>> {
+    let conditions: any[] = [];
+
+    // Text search across multiple fields
+    if (query) {
+      conditions.push(
+        or(
+          ilike(jobs.title, `%${query}%`),
+          ilike(jobs.company, `%${query}%`),
+          ilike(jobs.description, `%${query}%`),
+          ilike(jobs.industry, `%${query}%`)
+        )
+      );
+    }
+
+    // Filter by experience level
+    if (experienceLevel && experienceLevel !== 'All Levels') {
+      conditions.push(eq(jobs.experienceLevel, experienceLevel));
+    }
+
+    // Filter by work type
+    if (workType && workType !== 'All Types') {
+      conditions.push(eq(jobs.workType, workType));
+    }
+
+    // Build the where clause
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Get total count
+    const totalCountResult = await this.db
+      .select({ count: count() })
+      .from(jobs)
+      .where(whereClause);
+    const total = totalCountResult[0].count;
+
+    // Get paginated data
+    const offset = (page - 1) * limit;
+    const data = await this.db
+      .select()
+      .from(jobs)
+      .where(whereClause)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(jobs.id); // Add consistent ordering
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages
+    };
+  }
+
   // Additional utility methods for database operations
   async getJobCount(): Promise<number> {
-    const result = await this.db.select().from(jobs);
-    return result.length;
+    const result = await this.db.select({ count: count() }).from(jobs);
+    return result[0].count;
   }
 
-  async getResumeCount(): Promise<number> {
-    const result = await this.db.select().from(resumes);
-    return result.length;
-  }
+  async getFilteredJobCount(query?: string, experienceLevel?: string, workType?: string): Promise<number> {
+    let conditions: any[] = [];
 
-  async getMatchCount(): Promise<number> {
-    const result = await this.db.select().from(jobMatches);
-    return result.length;
+    // Text search across multiple fields
+    if (query) {
+      conditions.push(
+        or(
+          ilike(jobs.title, `%${query}%`),
+          ilike(jobs.company, `%${query}%`),
+          ilike(jobs.description, `%${query}%`),
+          ilike(jobs.industry, `%${query}%`)
+        )
+      );
+    }
+
+    // Filter by experience level
+    if (experienceLevel && experienceLevel !== 'All Levels') {
+      conditions.push(eq(jobs.experienceLevel, experienceLevel));
+    }
+
+    // Filter by work type
+    if (workType && workType !== 'All Types') {
+      conditions.push(eq(jobs.workType, workType));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const result = await this.db.select({ count: count() }).from(jobs).where(whereClause);
+    return result[0].count;
   }
 
   // Batch operations for better performance

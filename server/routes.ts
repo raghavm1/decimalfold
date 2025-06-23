@@ -35,8 +35,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize job database
   await initializeJobDatabase();
 
-  // Get all jobs
+  // Get all jobs with pagination
   app.get("/api/jobs", async (req, res) => {
+    try {
+      const { search, experienceLevel, workType, page, limit } = req.query;
+      
+      // Parse pagination parameters
+      const pageNum = parseInt(page as string) || 1;
+      const limitNum = parseInt(limit as string) || 20;
+      
+      // Validate pagination parameters
+      if (pageNum < 1 || limitNum < 1 || limitNum > 100) {
+        return res.status(400).json({ 
+          message: "Invalid pagination parameters. Page must be >= 1 and limit must be between 1 and 100." 
+        });
+      }
+      
+      const result = await storage.searchJobsPaginated(
+        search as string,
+        experienceLevel as string,
+        workType as string,
+        pageNum,
+        limitNum
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+      res.status(500).json({ message: "Failed to fetch jobs" });
+    }
+  });
+
+  // Get all jobs (legacy endpoint for backward compatibility)
+  app.get("/api/jobs/all", async (req, res) => {
     try {
       const { search, experienceLevel, workType } = req.query;
       

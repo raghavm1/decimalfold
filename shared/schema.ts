@@ -89,3 +89,11 @@ export type MatchingStats = {
   avgMatchScore: string;
   processingTime: string;
 };
+
+export type PaginatedResult<T> = {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
