@@ -1,9 +1,9 @@
 import 'dotenv/config';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { jobs, resumes, jobMatches, type Job, type Resume, type JobMatch, type InsertJob, type InsertResume, type InsertJobMatch } from '@shared/schema';
+import { jobs, resumes, jobMatches, type Job, type Resume, type JobMatch, type InsertJob, type InsertResume, type InsertJobMatch, type PaginatedResult } from '@shared/schema';
 import { eq, and, or, ilike, count } from 'drizzle-orm';
-import { IStorage, PaginatedResult } from './storage.js';
+import { IStorage } from './storage.js';
 
 /**
  * Database storage implementation using Neon PostgreSQL
