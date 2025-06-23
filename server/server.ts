@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { log } from "./vite";
+import { log } from "./logger";
 import cors from 'cors';
 import 'dotenv/config';
 
