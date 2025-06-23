@@ -530,3 +530,42 @@ export async function findJobMatchesWithPinecone(
     throw error;
   }
 }
+
+/**
+ * Calculate diversity score for MMR algorithm
+ * Penalizes jobs that are too similar to already selected ones
+ */
+function calculateDiversityScore(
+  job: Job & { matchScore: number; matchingSkills: string[]; confidence: string },
+  selected: Array<Job & { matchScore: number; matchingSkills: string[]; confidence: string }>,
+  companyCount: Map<string, number>
+): number {
+  let diversityScore = 1.0;
+
+  // Company diversity: penalize jobs from companies we already have
+  const company = job.company.toLowerCase();
+  const existingFromSameCompany = companyCount.get(company) || 0;
+
+  if (existingFromSameCompany > 0) {
+    // Heavy penalty for duplicate companies
+    diversityScore *= Math.pow(0.3, existingFromSameCompany);
+  }
+
+  // Location diversity: slight penalty for same location
+  const sameLocationCount = selected.filter(s => 
+    s.location.toLowerCase() === job.location.toLowerCase()
+  ).length;
+  if (sameLocationCount > 2) {
+    diversityScore *= 0.8; // 20% penalty for location clustering
+  }
+
+  // Industry diversity: slight penalty for same industry
+  const sameIndustryCount = selected.filter(s => 
+    s.industry.toLowerCase() === job.industry.toLowerCase()
+  ).length;
+  if (sameIndustryCount > 3) {
+    diversityScore *= 0.9; // 10% penalty for industry clustering
+  }
+
+  return diversityScore;
+}
