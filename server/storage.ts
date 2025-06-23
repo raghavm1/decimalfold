@@ -1,14 +1,5 @@
-import { jobs, resumes, jobMatches, type Job, type Resume, type JobMatch, type InsertJob, type InsertResume, type InsertJobMatch } from "@shared/schema";
+import { jobs, resumes, jobMatches, type Job, type Resume, type JobMatch, type InsertJob, type InsertResume, type InsertJobMatch, type PaginatedResult } from "@shared/schema";
 import { databaseStorage } from "./storage-database.js";
-
-export interface PaginatedResult<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
 export interface IStorage {
   // Job operations
   getAllJobs(): Promise<Job[]>;
