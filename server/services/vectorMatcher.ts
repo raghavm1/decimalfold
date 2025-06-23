@@ -384,7 +384,7 @@ export async function findJobMatchesWithPinecone(
       includeMetadata: true
     });
 
-    console.log(`� Found ${searchResults.length} potential matches from Pinecone`);
+    console.log(`✨ Found ${searchResults.length} potential matches from Pinecone`);
 
     // Get job details from database for the matched job IDs
     const jobIds = searchResults.map(result => {
