@@ -216,12 +216,12 @@ export default function Home() {
     }
   }, [searchString, currentResume]);
 
-  // Update total jobs when jobs are loaded
+  // Update total jobs when jobs data is loaded
   useEffect(() => {
-    if (jobs.length > 0) {
-      setStats((prev) => ({ ...prev, totalJobs: jobs.length }));
+    if (totalJobs > 0) {
+      setStats((prev) => ({ ...prev, totalJobs: totalJobs }));
     }
-  }, [jobs.length]);
+  }, [totalJobs]);
 
   return (
     <div className="min-h-screen bg-custom">
