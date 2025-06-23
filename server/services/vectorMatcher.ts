@@ -40,33 +40,7 @@ export function applyMMR(
       const relevanceScore = job.matchScore; // Original relevance score from Pinecone
 
       // Calculate diversity score (how different this job is from selected jobs)
-      let diversityScore = 1.0;
-      
-      // Company diversity: penalize jobs from companies we already have
-      const company = job.company.toLowerCase();
-      const existingFromSameCompany = companyCount.get(company) || 0;
-      
-      if (existingFromSameCompany > 0) {
-        // Heavy penalty for duplicate companies
-        diversityScore *= Math.pow(0.3, existingFromSameCompany);
-      }
-
-      // Location diversity: slight penalty for same location
-      const sameLocationCount = selected.filter(s => 
-        s.location.toLowerCase() === job.location.toLowerCase()
-      ).length;
-      if (sameLocationCount > 2) {
-        diversityScore *= 0.8; // 20% penalty for location clustering
-      }
-
-      // Industry diversity: slight penalty for same industry
-      const sameIndustryCount = selected.filter(s => 
-        s.industry.toLowerCase() === job.industry.toLowerCase()
-      ).length;
-      if (sameIndustryCount > 3) {
-        diversityScore *= 0.9; // 10% penalty for industry clustering
-      }
-
+      const diversityScore = calculateDiversityScore(job, selected, companyCount);
       // MMR formula: λ * relevance + (1-λ) * diversity
       const mmrScore = lambda * relevanceScore + (1 - lambda) * diversityScore;
 
