@@ -6,6 +6,7 @@ import JobListings from "@/components/JobListings";
 import ResumeUpload from "@/components/ResumeUpload";
 import JobMatches from "@/components/JobMatches";
 import JobGenerator from "@/components/JobGenerator";
+import { apiRequest } from "@/lib/queryClient";
 import type {
   Job,
   JobWithMatch,
@@ -66,10 +67,7 @@ export default function Home() {
       params.append("page", currentPage.toString());
       params.append("limit", jobsPerPage.toString());
 
-      const response = await fetch(`/api/jobs?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch jobs");
-      }
+      const response = await apiRequest("GET", `/api/jobs?${params.toString()}`);
       return response.json();
     },
   });
