@@ -13,8 +13,14 @@ import type {
   ParsedResumeData,
   PaginatedResult,
 } from "@shared/schema";
-import { Bot, Menu, User, RotateCcw } from "lucide-react";
+import { Bot, Menu, User, RotateCcw, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
@@ -228,50 +234,73 @@ export default function Home() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* Left: Logo and Brand */}
           <div className="flex items-center space-x-4">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <Bot className="text-white text-lg" />
             </div>
             <h1 className="text-2xl font-bold text-slate-custom">
-              AI Job Matcher
+              DecimalFold
             </h1>
           </div>
+
+          {/* Center: Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             <a
               href="#"
-              className="text-slate-custom hover:text-primary transition-colors"
+              className="text-slate-custom hover:text-primary transition-colors font-medium"
             >
               Dashboard
             </a>
-            <a
-              href="#"
-              className="text-slate-custom hover:text-primary transition-colors"
-            >
-              My Applications
-            </a>
-            <a
-              href="#"
-              className="text-slate-custom hover:text-primary transition-colors"
-            >
-              Profile
-            </a>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="text-slate-custom hover:text-primary transition-colors font-medium flex items-center space-x-1 cursor-not-allowed opacity-75"
+                    disabled
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Ask Chat</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Coming Soon</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </nav>
+
+          {/* Right: Action Buttons */}
+          <div className="flex items-center space-x-3">
+            {/* Start Over Button - Desktop */}
             {currentResume && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleClearState}
-                className="text-gray-600 hover:text-red-600 hover:border-red-300"
+                className="hidden md:flex text-gray-600 hover:text-red-600 hover:border-red-300"
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Start Over
               </Button>
             )}
-            <Button className="bg-primary text-white hover:bg-blue-700">
-              <User className="mr-2 w-4 h-4" />
-              Account
-            </Button>
-          </nav>
-          <div className="flex items-center space-x-2">
+
+            {/* Account Button - Desktop */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button className="hidden md:flex bg-gray-400 text-gray-600 hover:bg-gray-400 cursor-not-allowed opacity-75">
+                    <User className="mr-2 w-4 h-4" />
+                    Account
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Coming Soon</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Mobile Action Buttons */}
             {currentResume && (
               <Button
                 variant="outline"
@@ -282,6 +311,8 @@ export default function Home() {
                 <RotateCcw className="w-4 h-4" />
               </Button>
             )}
+
+            {/* Mobile Menu Button */}
             <Button
               variant="ghost"
               size="icon"
@@ -340,9 +371,7 @@ export default function Home() {
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <Bot className="text-white w-4 h-4" />
                 </div>
-                <span className="font-bold text-slate-custom">
-                  AI Job Matcher
-                </span>
+                <span className="font-bold text-slate-custom">DecimalFold</span>
               </div>
               <p className="text-gray-600 text-sm">
                 Intelligent job matching powered by AI to connect talent with
@@ -417,9 +446,6 @@ export default function Home() {
           </div>
 
           <div className="border-t border-gray-200 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-gray-600">
-              © 2024 AI Job Matcher. All rights reserved.
-            </p>
             <div className="flex items-center space-x-6 mt-4 md:mt-0">
               <a
                 href="#"
