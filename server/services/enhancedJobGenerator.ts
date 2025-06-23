@@ -347,6 +347,323 @@ const DESCRIPTION_TEMPLATES = {
 };
 
 export class DiverseJobGenerator {
+  
+  /**
+   * Generate realistic company distribution with dynamic startup names
+   */
+  private static generateRealisticCompanyDistribution(jobCount: number): { 
+    companyName: string; 
+    companySize: string; 
+    maxJobs: number; 
+    allowDuplicateRoles: boolean 
+  }[] {
+    console.log(`🏢 Creating realistic company ecosystem for ${jobCount} jobs...`);
+    
+    const distribution: { companyName: string; companySize: string; maxJobs: number; allowDuplicateRoles: boolean }[] = [];
+    
+    // 1. Big Tech Companies (real names, multiple jobs including duplicates)
+    const bigTechCompanies = [
+      "Google", "Microsoft", "Amazon", "Apple", "Meta", "Netflix", "Tesla", "Uber", "Airbnb", "Stripe",
+      "Salesforce", "Oracle", "IBM", "Intel", "NVIDIA", "Adobe", "Zoom", "Slack", "Spotify", "Twitter",
+      "LinkedIn", "Pinterest", "Snapchat", "TikTok", "Discord", "Shopify", "Square", "PayPal",
+      "Goldman Sachs", "JPMorgan Chase", "Morgan Stanley", "BlackRock", "Citadel", "Bank of America",
+      "McKinsey & Company", "Boston Consulting Group", "Deloitte", "PwC", "KPMG", "Accenture"
+    ];
+    
+    bigTechCompanies.forEach(company => {
+      distribution.push({
+        companyName: company,
+        companySize: "1000+ employees",
+        maxJobs: faker.number.int({ min: 5, max: 12 }), // More jobs for big companies
+        allowDuplicateRoles: true
+      });
+    });
+    
+    // 2. Established Tech Companies (mix of real + generated names)
+    const establishedCompanyPrefixes = [
+      "Cloud", "Data", "Tech", "Cyber", "Digital", "Smart", "Next", "Future", "Advanced", "Global",
+      "Enterprise", "Business", "Secure", "Rapid", "Agile", "Quantum", "Neural", "AI", "Blockchain"
+    ];
+    
+    const establishedCompanySuffixes = [
+      "Systems", "Solutions", "Technologies", "Dynamics", "Innovations", "Labs", "Corp", "Inc",
+      "Group", "Partners", "Ventures", "Works", "Hub", "Studio", "Platform", "Network"
+    ];
+    
+    // Generate ~100 medium-sized companies
+    for (let i = 0; i < 100; i++) {
+      const prefix = faker.helpers.arrayElement(establishedCompanyPrefixes);
+      const suffix = faker.helpers.arrayElement(establishedCompanySuffixes);
+      
+      distribution.push({
+        companyName: `${prefix} ${suffix}`,
+        companySize: "100-999 employees",
+        maxJobs: faker.number.int({ min: 2, max: 5 }),
+        allowDuplicateRoles: false
+      });
+    }
+    
+    // 3. Generate tons of unique startups (realistic startup names)
+    const startupPatterns = [
+      // Pattern 1: [Adjective][Noun] (modern tech style)
+      () => {
+        const adjectives = ["Swift", "Bright", "Smart", "Quick", "Fresh", "Bold", "Clear", "Deep", "Fast", "Pure", "Sharp", "Live", "True", "Open", "Core"];
+        const nouns = ["Flow", "Sync", "Link", "Path", "Wave", "Grid", "Edge", "Node", "Code", "Base", "Loop", "Shift", "Spark", "Flux", "Beam"];
+        return faker.helpers.arrayElement(adjectives) + faker.helpers.arrayElement(nouns);
+      },
+      
+      // Pattern 2: [Tech term] + [Action/Object]
+      () => {
+        const techTerms = ["Data", "Cloud", "AI", "Crypto", "Quantum", "Neural", "Cyber", "Digital", "Smart", "Auto"];
+        const actions = ["Flow", "Forge", "Build", "Cast", "Craft", "Drive", "Sync", "Scale", "Boost", "Launch"];
+        return faker.helpers.arrayElement(techTerms) + faker.helpers.arrayElement(actions);
+      },
+      
+      // Pattern 3: [Color/Nature] + [Tech suffix]
+      () => {
+        const nature = ["Ocean", "River", "Mountain", "Forest", "Storm", "Lightning", "Solar", "Lunar", "Arctic", "Desert"];
+        const techSuffixes = ["Labs", "Tech", "AI", "Systems", "Works", "Hub", "Studio", "Platform"];
+        return faker.helpers.arrayElement(nature) + " " + faker.helpers.arrayElement(techSuffixes);
+      },
+      
+      // Pattern 4: Made-up modern names (like Spotify, Shopify style)
+      () => {
+        const prefixes = ["Zap", "Flux", "Apex", "Vibe", "Maze", "Zen", "Arc", "Echo", "Orb", "Pulse", "Hex", "Nova"];
+        const suffixes = ["ify", "ly", "io", "ai", "co", "lab", "app", "hub", "box", "kit", "pro", "dev"];
+        return faker.helpers.arrayElement(prefixes) + faker.helpers.arrayElement(suffixes);
+      },
+      
+      // Pattern 5: [Person name] + [Tech term] (founder-named startups)
+      () => {
+        const founder = faker.person.lastName();
+        const terms = ["Labs", "Tech", "Systems", "Solutions", "Innovations", "Ventures", "Works", "Studio"];
+        return `${founder} ${faker.helpers.arrayElement(terms)}`;
+      }
+    ];
+    
+    // Calculate how many startups we need
+    const currentJobCapacity = distribution.reduce((sum, comp) => sum + comp.maxJobs, 0);
+    const remainingJobs = Math.max(0, jobCount - currentJobCapacity);
+    const startupsNeeded = Math.ceil(remainingJobs * 1.5); // Generate extra to ensure variety
+    
+    console.log(`📊 Generating ${startupsNeeded} unique startups for remaining ${remainingJobs} jobs...`);
+    
+    const generatedNames = new Set<string>();
+    
+    for (let i = 0; i < startupsNeeded; i++) {
+      let companyName: string;
+      let attempts = 0;
+      
+      // Try to generate a unique name
+      do {
+        const pattern = faker.helpers.arrayElement(startupPatterns);
+        companyName = pattern();
+        attempts++;
+      } while (generatedNames.has(companyName) && attempts < 10);
+      
+      // If we couldn't generate unique name, add a number
+      if (generatedNames.has(companyName)) {
+        companyName = `${companyName} ${faker.number.int({ min: 1, max: 99 })}`;
+      }
+      
+      generatedNames.add(companyName);
+      
+      distribution.push({
+        companyName,
+        companySize: "10-99 employees",
+        maxJobs: faker.number.int({ min: 1, max: 2 }), // Small companies, 1-2 jobs max
+        allowDuplicateRoles: false
+      });
+    }
+    
+    console.log(`✅ Created ecosystem with:`);
+    console.log(`   • ${bigTechCompanies.length} big tech companies (5-12 jobs each)`);
+    console.log(`   • 100 established companies (2-5 jobs each)`);
+    console.log(`   • ${generatedNames.size} unique startups (1-2 jobs each)`);
+    
+    return faker.helpers.shuffle(distribution); // Randomize order
+  }
+
+  /**
+   * Generate jobs with realistic company distribution
+   */
+  static async generateJobBatchWithCompanyDistribution(count: number): Promise<any[]> {
+    const jobs = [];
+    const companyDistribution = this.generateRealisticCompanyDistribution(count);
+    const usedCombinations = new Set<string>();
+    
+    console.log(`🚀 Starting generation of ${count} jobs with realistic company ecosystem...`);
+    
+    // Shuffle companies for random selection
+    const shuffledCompanies = faker.helpers.shuffle(companyDistribution);
+    
+    let jobsGenerated = 0;
+    let companyIndex = 0;
+    
+    while (jobsGenerated < count && companyIndex < shuffledCompanies.length) {
+      const companyInfo = shuffledCompanies[companyIndex];
+      const jobsForThisCompany = Math.min(companyInfo.maxJobs, count - jobsGenerated);
+      
+      console.log(`🏢 Generating ${jobsForThisCompany} jobs for ${companyInfo.companyName} (${companyInfo.companySize})`);
+      
+      const companyJobs = [];
+      const usedRolesForCompany = new Set<string>();
+      
+      for (let i = 0; i < jobsForThisCompany; i++) {
+        let job;
+        let attempts = 0;
+        
+        do {
+          job = this.generateUniqueJob();
+          job.company = companyInfo.companyName;
+          job.companySize = companyInfo.companySize;
+          
+          const roleKey = `${job.title}`;
+          const jobKey = `${job.title}-${job.company}-${job.location}`;
+          
+          // For large companies, allow duplicate roles with different locations/requirements
+          if (companyInfo.allowDuplicateRoles) {
+            // Allow same role if it's in a different location or has different experience level
+            if (!usedCombinations.has(jobKey)) {
+              usedCombinations.add(jobKey);
+              break;
+            }
+          } else {
+            // For smaller companies, ensure unique roles
+            if (!usedRolesForCompany.has(roleKey)) {
+              usedRolesForCompany.add(roleKey);
+              usedCombinations.add(jobKey);
+              break;
+            }
+          }
+          
+          attempts++;
+        } while (attempts < 20);
+        
+        if (attempts < 20) {
+          companyJobs.push(job);
+        }
+      }
+      
+      jobs.push(...companyJobs);
+      jobsGenerated += companyJobs.length;
+      companyIndex++;
+      
+      if (jobsGenerated % 500 === 0) {
+        console.log(`✅ Generated ${jobsGenerated} jobs so far...`);
+      }
+    }
+    
+    // Fill remaining jobs with random single-job companies if needed
+    while (jobsGenerated < count) {
+      const job = this.generateUniqueJob();
+      
+      // Generate a quick startup name for remaining jobs
+      const quickStartups = ["Zap", "Flow", "Sync", "Edge", "Nova", "Flux"];
+      const quickSuffixes = ["ly", "io", "co", "lab", "dev", "pro"];
+      job.company = faker.helpers.arrayElement(quickStartups) + faker.helpers.arrayElement(quickSuffixes);
+      job.companySize = "10-99 employees";
+      
+      jobs.push(job);
+      jobsGenerated++;
+    }
+    
+    console.log(`🎉 Generated ${jobs.length} jobs with realistic company distribution!`);
+    
+    // Log company distribution summary
+    const companyJobCounts = jobs.reduce((acc, job) => {
+      acc[job.company] = (acc[job.company] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const companiesWithMultipleJobs = Object.entries(companyJobCounts)
+      .filter(([, count]) => (count as number) > 1)
+      .sort(([,a], [,b]) => (b as number) - (a as number));
+    
+    console.log(`\n📊 Companies with multiple job openings:`);
+    companiesWithMultipleJobs.slice(0, 15).forEach(([company, count]) => {
+      console.log(`   ${company}: ${count} jobs`);
+    });
+    
+    // Show distribution by company size
+    const sizeDistribution = jobs.reduce((acc, job) => {
+      const size = job.companySize || 'Unknown';
+      acc[size] = (acc[size] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    console.log(`\n📈 Distribution by company size:`);
+    Object.entries(sizeDistribution).forEach(([size, count]) => {
+      const percentage = (((count as number) / jobs.length) * 100).toFixed(1);
+      console.log(`   ${size}: ${count} jobs (${percentage}%)`);
+    });
+    
+    return jobs;
+  }
+
+  /**
+   * Match job title seniority level with appropriate experience level and salary range
+   */
+  private static getMatchingExperienceAndSalary(title: string, categoryData: JobCategory): { experienceLevel: string; salaryRange: { min: number; max: number } } {
+    const titleLower = title.toLowerCase();
+    
+    // Define seniority levels based on title keywords (order matters - most specific first)
+    const seniorityKeywords = [
+      // Leadership level (highest)
+      { level: 'leadership', keywords: ['director', 'vp', 'vice president', 'head of', 'chief', 'ceo', 'cto', 'cfo', 'cmo', 'coo', 'partner'] },
+      // Principal/Staff level
+      { level: 'principal', keywords: ['principal', 'staff', 'distinguished'] },
+      // Senior level
+      { level: 'senior', keywords: ['senior', 'lead', 'sr.', 'sr '] },
+      // Manager level
+      { level: 'manager', keywords: ['manager', 'mgr'] },
+      // Entry level
+      { level: 'entry', keywords: ['entry', 'junior', 'jr.', 'jr ', 'associate', 'coordinator', 'assistant', 'trainee', 'intern', 'analyst'] }
+    ];
+    
+    // Determine seniority level (first match wins)
+    let seniorityLevel = 'mid'; // default for roles like "Engineer", "Developer", etc.
+    
+    for (const { level, keywords } of seniorityKeywords) {
+      if (keywords.some(keyword => titleLower.includes(keyword))) {
+        seniorityLevel = level;
+        break;
+      }
+    }
+    
+    // Map seniority level to experience level index
+    let experienceIndex = 1; // default to mid-level
+    
+    switch (seniorityLevel) {
+      case 'entry':
+        experienceIndex = 0;
+        break;
+      case 'mid':
+        experienceIndex = Math.min(1, categoryData.experienceLevels.length - 1);
+        break;
+      case 'manager':
+        experienceIndex = Math.min(2, categoryData.experienceLevels.length - 1);
+        break;
+      case 'senior':
+        experienceIndex = Math.min(2, categoryData.experienceLevels.length - 1);
+        break;
+      case 'principal':
+        experienceIndex = Math.min(3, categoryData.experienceLevels.length - 1);
+        break;
+      case 'leadership':
+        experienceIndex = categoryData.experienceLevels.length - 1; // Highest level
+        break;
+    }
+    
+    // Ensure we don't go out of bounds
+    experienceIndex = Math.max(0, Math.min(experienceIndex, categoryData.experienceLevels.length - 1));
+    
+    return {
+      experienceLevel: categoryData.experienceLevels[experienceIndex],
+      salaryRange: categoryData.salaryRanges[experienceIndex]
+    };
+  }
+
   static generateUniqueJob(): any {
     // 1. Randomly select category
     const categories = Object.keys(JOB_CATEGORIES);
@@ -358,11 +675,10 @@ export class DiverseJobGenerator {
     const selectedCompanyType = faker.helpers.arrayElement(companyTypes);
     const companyTypeData: CompanyType = COMPANY_TYPES[selectedCompanyType];
     
-    // 3. Generate unique combinations
+    // 3. Generate unique combinations with proper title-experience matching
     const title = faker.helpers.arrayElement(categoryData.titles);
-    const experienceLevel = faker.helpers.arrayElement(categoryData.experienceLevels);
+    const { experienceLevel, salaryRange } = this.getMatchingExperienceAndSalary(title, categoryData);
     const techStack = faker.helpers.arrayElement(categoryData.techStacks);
-    const salaryRange = faker.helpers.arrayElement(categoryData.salaryRanges);
     
     const companyName = faker.helpers.arrayElement(companyTypeData.names);
     const companySize = faker.helpers.arrayElement(companyTypeData.sizes);
@@ -402,19 +718,33 @@ export class DiverseJobGenerator {
     return {
       title,
       company: companyName,
+      companySize: companySize, // Now included in schema
       location,
       workType: faker.helpers.arrayElement(['Full-time', 'Contract', 'Part-time', 'Contract-to-hire']),
-      experienceLevel: experienceLevel.split(' ')[0] + ' ' + experienceLevel.split(' ')[1], // "Senior Level", "Entry Level", etc.
+      experienceLevel: this.formatExperienceLevel(experienceLevel),
       salaryMin: salary * 1000,
       salaryMax: (salary + faker.number.int({ min: 15, max: 30 })) * 1000,
       description,
       requirements,
       skills: techStack,
       postedDate: faker.date.recent({ days: 30 }).toISOString(),
-      industry: this.getIndustryForCategory(selectedCategory)
+      industry: this.getIndustryForCategory(selectedCategory),
+      companyLogo: null // Set to null as per schema
     };
   }
-  
+
+  /**
+   * Format experience level to match database schema expectations
+   */
+  private static formatExperienceLevel(experienceLevel: string): string {
+    // Convert "Senior (5-8 years)" to "Senior Level" etc.
+    if (experienceLevel.includes('Entry')) return 'Entry Level';
+    if (experienceLevel.includes('Associate') || experienceLevel.includes('Mid')) return 'Mid Level';
+    if (experienceLevel.includes('Senior')) return 'Senior Level';
+    if (experienceLevel.includes('Principal') || experienceLevel.includes('Director') || experienceLevel.includes('VP')) return 'Leadership';
+    return 'Mid Level'; // fallback
+  }
+
   private static buildDescription(params: any): string {
     const { intro, title, responsibilities, companyName, companyDescription, companySize, companyGoal, techStack } = params;
     
@@ -555,35 +885,7 @@ ${techStack.join(', ')}`;
   }
 
   static async generateJobBatch(count: number): Promise<any[]> {
-    const jobs = [];
-    const uniqueCheck = new Set<string>();
-    
-    console.log(`🚀 Starting generation of ${count} diverse jobs...`);
-    
-    for (let i = 0; i < count; i++) {
-      let job;
-      let attempts = 0;
-      
-      // Ensure uniqueness
-      do {
-        job = this.generateUniqueJob();
-        const jobKey = `${job.title}-${job.company}-${job.location}`;
-        
-        if (!uniqueCheck.has(jobKey)) {
-          uniqueCheck.add(jobKey);
-          break;
-        }
-        attempts++;
-      } while (attempts < 10); // Max 10 attempts to find unique combination
-      
-      jobs.push(job);
-      
-      if (i % 1000 === 0 && i > 0) {
-        console.log(`✅ Generated ${i} unique jobs...`);
-      }
-    }
-    
-    console.log(`🎉 Generated ${jobs.length} diverse jobs with ${uniqueCheck.size} unique combinations!`);
-    return jobs;
+    // Use the new company distribution method by default
+    return this.generateJobBatchWithCompanyDistribution(count);
   }
 }

@@ -53,13 +53,45 @@ export class PineconeService {
     }
   }
 
-  async getIndexStats(): Promise<any> {
+  async getIndexStats(): Promise<{ totalVectorCount?: number }> {
     try {
       const index = this.pinecone.index(this.indexName);
       const stats = await index.describeIndexStats();
-      return stats;
+      return {
+        totalVectorCount: stats.totalRecordCount
+      };
     } catch (error) {
       console.error('Error getting index stats:', error);
+      throw error;
+    }
+  }
+
+  async deleteAllVectors(): Promise<void> {
+    try {
+      const index = this.pinecone.index(this.indexName);
+      // Delete all vectors by not providing any IDs (deletes everything)
+      await index.deleteAll();
+      console.log('All vectors deleted from Pinecone index');
+    } catch (error) {
+      console.error('Error deleting all vectors:', error);
+      throw error;
+    }
+  }
+
+  async deleteJobVectors(jobIds: number[]): Promise<void> {
+    try {
+      const index = this.pinecone.index(this.indexName);
+      const vectorIds = jobIds.map(id => `job_${id}`);
+      
+      // Delete in batches of 1000 (Pinecone limit)
+      const batchSize = 1000;
+      for (let i = 0; i < vectorIds.length; i += batchSize) {
+        const batch = vectorIds.slice(i, i + batchSize);
+        await index.deleteMany(batch);
+        console.log(`Deleted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(vectorIds.length / batchSize)}`);
+      }
+    } catch (error) {
+      console.error('Error deleting job vectors:', error);
       throw error;
     }
   }

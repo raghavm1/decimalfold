@@ -6,6 +6,7 @@ export const jobs = pgTable("jobs", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   company: text("company").notNull(),
+  companySize: text("company_size"), // e.g., "1000+ employees", "100-999 employees"
   location: text("location").notNull(),
   workType: text("work_type").notNull(), // Full-time, Part-time, Contract, Remote
   experienceLevel: text("experience_level").notNull(), // Entry, Mid, Senior, Leadership
