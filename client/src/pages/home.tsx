@@ -11,6 +11,7 @@ import type {
   JobWithMatch,
   MatchingStats,
   ParsedResumeData,
+  PaginatedResult,
 } from "@shared/schema";
 import { Bot, Menu, User, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,15 +44,21 @@ export default function Home() {
     experienceLevel: "",
     workType: "",
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [jobsPerPage] = useState(20);
 
-  const { data: jobs = [], isLoading: jobsLoading } = useQuery<Job[]>({
-    queryKey: ["/api/jobs", jobFilters],
+  const { data: jobsData, isLoading: jobsLoading } = useQuery<
+    PaginatedResult<Job>
+  >({
+    queryKey: ["/api/jobs", jobFilters, currentPage, jobsPerPage],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (jobFilters.search) params.append("search", jobFilters.search);
       if (jobFilters.experienceLevel)
         params.append("experienceLevel", jobFilters.experienceLevel);
       if (jobFilters.workType) params.append("workType", jobFilters.workType);
+      params.append("page", currentPage.toString());
+      params.append("limit", jobsPerPage.toString());
 
       const response = await fetch(`/api/jobs?${params.toString()}`);
       if (!response.ok) {
@@ -61,12 +68,18 @@ export default function Home() {
     },
   });
 
+  // Extract jobs from paginated result
+  const jobs = jobsData?.data || [];
+  const totalJobs = jobsData?.total || 0;
+  const totalPages = jobsData?.totalPages || 1;
+
   const handleFiltersChange = (filters: {
     search: string;
     experienceLevel: string;
     workType: string;
   }) => {
     setJobFilters(filters);
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
   const handleResumeProcessed = (resumeData: {
@@ -142,7 +155,7 @@ export default function Home() {
     setCurrentResume(null);
     setMatches([]);
     setStats({
-      totalJobs: jobs.length,
+      totalJobs: totalJobs,
       matchesFound: 0,
       avgMatchScore: "-",
       processingTime: "0s",
@@ -294,6 +307,11 @@ export default function Home() {
               isLoading={jobsLoading}
               resumeId={currentResume?.id}
               onFiltersChange={handleFiltersChange}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalJobs={totalJobs}
+              jobsPerPage={jobsPerPage}
+              onPageChange={setCurrentPage}
             />
           </div>
 

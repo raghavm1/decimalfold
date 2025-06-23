@@ -1,6 +1,5 @@
-import { jobs, resumes, jobMatches, type Job, type Resume, type JobMatch, type InsertJob, type InsertResume, type InsertJobMatch } from "@shared/schema";
+import { jobs, resumes, jobMatches, type Job, type Resume, type JobMatch, type InsertJob, type InsertResume, type InsertJobMatch, type PaginatedResult } from "@shared/schema";
 import { databaseStorage } from "./storage-database.js";
-
 export interface IStorage {
   // Job operations
   getAllJobs(): Promise<Job[]>;
@@ -17,6 +16,13 @@ export interface IStorage {
   
   // Search and filter operations
   searchJobs(query: string, experienceLevel?: string, workType?: string): Promise<Job[]>;
+  searchJobsPaginated(
+    query: string, 
+    experienceLevel?: string, 
+    workType?: string, 
+    page?: number, 
+    limit?: number
+  ): Promise<PaginatedResult<Job>>;
 }
 
 export class MemStorage implements IStorage {
@@ -53,7 +59,8 @@ export class MemStorage implements IStorage {
       vector: null,
       salaryMin: insertJob.salaryMin ?? null,
       salaryMax: insertJob.salaryMax ?? null,
-      companyLogo: insertJob.companyLogo ?? null
+      companyLogo: insertJob.companyLogo ?? null,
+      companySize: insertJob.companySize ?? null
     };
     this.jobs.set(id, job);
     return job;
@@ -104,6 +111,31 @@ export class MemStorage implements IStorage {
       
       return matchesQuery && matchesExperience && matchesWorkType;
     });
+  }
+
+  async searchJobsPaginated(
+    query: string,
+    experienceLevel?: string,
+    workType?: string,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<PaginatedResult<Job>> {
+    // Get filtered jobs
+    const filteredJobs = await this.searchJobs(query, experienceLevel, workType);
+    
+    const total = filteredJobs.length;
+    const totalPages = Math.ceil(total / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const data = filteredJobs.slice(startIndex, endIndex);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages
+    };
   }
 }
 

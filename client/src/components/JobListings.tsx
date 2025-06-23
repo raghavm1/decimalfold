@@ -1,6 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { Filter, Search, DollarSign, Clock, X } from "lucide-react";
+import {
+  Filter,
+  Search,
+  DollarSign,
+  Clock,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import type { Job } from "@shared/schema";
 import { formatSalary, formatRelativeTime } from "@/lib/utils";
 
@@ -25,6 +34,12 @@ interface JobListingsProps {
     experienceLevel: string;
     workType: string;
   }) => void;
+  // Pagination props
+  currentPage?: number;
+  totalPages?: number;
+  totalJobs?: number;
+  jobsPerPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export default function JobListings({
@@ -32,48 +47,48 @@ export default function JobListings({
   isLoading,
   resumeId,
   onFiltersChange,
+  currentPage = 1,
+  totalPages = 1,
+  totalJobs = 0,
+  jobsPerPage = 20,
+  onPageChange,
 }: JobListingsProps) {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("All Levels");
   const [workType, setWorkType] = useState("All Types");
+  const lastFiltersRef = useRef({
+    search: "",
+    experienceLevel: "",
+    workType: "",
+  });
 
   // Debounced server-side filtering
   useEffect(() => {
     const timer = setTimeout(() => {
       if (onFiltersChange) {
-        onFiltersChange({
+        const newFilters = {
           search: searchQuery,
           experienceLevel:
             experienceLevel === "All Levels" ? "" : experienceLevel,
           workType: workType === "All Types" ? "" : workType,
-        });
+        };
+
+        // Only call onFiltersChange if filters have actually changed
+        if (
+          newFilters.search !== lastFiltersRef.current.search ||
+          newFilters.experienceLevel !==
+            lastFiltersRef.current.experienceLevel ||
+          newFilters.workType !== lastFiltersRef.current.workType
+        ) {
+          lastFiltersRef.current = newFilters;
+          onFiltersChange(newFilters);
+        }
       }
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timer);
   }, [searchQuery, experienceLevel, workType, onFiltersChange]);
-
-  // Client-side filtering as fallback when no server-side filtering
-  const filteredJobs = onFiltersChange
-    ? jobs
-    : jobs.filter((job) => {
-        const matchesQuery =
-          !searchQuery ||
-          job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          job.skills.some((skill) =>
-            skill.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-
-        const matchesExperience =
-          experienceLevel === "All Levels" ||
-          job.experienceLevel === experienceLevel;
-        const matchesWorkType =
-          workType === "All Types" || job.workType === workType;
-
-        return matchesQuery && matchesExperience && matchesWorkType;
-      });
 
   const getCompanyInitials = (company: string): string => {
     return company
@@ -179,7 +194,8 @@ export default function JobListings({
           <CardTitle>
             Available Positions
             <span className="text-sm font-normal text-gray-500 ml-2">
-              ({filteredJobs.length} jobs)
+              ({totalJobs} jobs
+              {totalPages > 1 ? `, page ${currentPage} of ${totalPages}` : ""})
             </span>
           </CardTitle>
         </CardHeader>
@@ -205,12 +221,12 @@ export default function JobListings({
                     </div>
                   ))}
                 </div>
-              ) : filteredJobs.length === 0 ? (
+              ) : jobs.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">
                   No jobs found matching your criteria
                 </div>
               ) : (
-                filteredJobs.map((job) => (
+                jobs.map((job: Job) => (
                   <div
                     key={job.id}
                     className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -257,7 +273,7 @@ export default function JobListings({
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-2 mt-3">
-                            {job.skills.slice(0, 3).map((skill) => (
+                            {job.skills.slice(0, 3).map((skill: string) => (
                               <Badge
                                 key={skill}
                                 variant="secondary"
@@ -288,6 +304,76 @@ export default function JobListings({
               )}
             </div>
           </ScrollArea>
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t bg-gray-50/50">
+              <div className="text-sm text-gray-700 font-medium order-2 sm:order-1">
+                <span className="hidden sm:inline">Showing </span>
+                <span className="text-gray-900 font-semibold">
+                  {(currentPage - 1) * jobsPerPage + 1}-
+                  {Math.min(currentPage * jobsPerPage, totalJobs)}
+                </span>
+                <span className="hidden sm:inline"> of </span>
+                <span className="sm:hidden"> / </span>
+                <span className="text-gray-900 font-semibold">
+                  {totalJobs.toLocaleString()}
+                </span>
+                <span className="hidden sm:inline"> jobs</span>
+              </div>
+              <div className="flex items-center space-x-1 order-1 sm:order-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange?.(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                  className="text-gray-600 border-gray-300 hover:bg-gray-100 px-2"
+                >
+                  <ChevronLeft className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Previous</span>
+                </Button>
+                <div className="flex items-center space-x-0.5">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let page;
+                    if (totalPages <= 5) {
+                      page = i + 1;
+                    } else if (currentPage <= 3) {
+                      page = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      page = totalPages - 4 + i;
+                    } else {
+                      page = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <Button
+                        key={page}
+                        variant={page === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => onPageChange?.(page)}
+                        className={`w-8 h-8 text-sm p-0 ${
+                          page === currentPage
+                            ? "bg-blue-600 hover:bg-blue-700 text-white"
+                            : "text-gray-600 border-gray-300 hover:bg-gray-100"
+                        }`}
+                      >
+                        {page}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange?.(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  className="text-gray-600 border-gray-300 hover:bg-gray-100 px-2"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="w-4 h-4 sm:ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

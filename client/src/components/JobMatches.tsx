@@ -179,10 +179,9 @@ export default function JobMatches({
               {resumeId ? "No matches found" : "No matches yet"}
             </h3>
             <p className="text-gray-400">
-              {resumeId 
+              {resumeId
                 ? "We don't have any relevant opportunities at the moment. Check back later for new matches!"
-                : "Upload your resume to discover perfectly matched job opportunities"
-              }
+                : "Upload your resume to discover perfectly matched job opportunities"}
             </p>
           </div>
         ) : (
@@ -270,10 +269,10 @@ export default function JobMatches({
 
                   <div className="flex items-center justify-between pt-3 border-t">
                     <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
+                      {/* <span className="flex items-center gap-1">
                         {getConfidenceIcon(match.confidence || "medium")}
                         Confidence: {match.confidence || "Medium"}
-                      </span>
+                      </span> */}
                       <span className="flex items-center gap-1">
                         <Users className="w-3 h-3" />
                         {match.experienceLevel}
