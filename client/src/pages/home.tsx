@@ -310,6 +310,7 @@ export default function Home() {
               currentPage={currentPage}
               totalPages={totalPages}
               totalJobs={totalJobs}
+              jobsPerPage={jobsPerPage}
               onPageChange={setCurrentPage}
             />
           </div>

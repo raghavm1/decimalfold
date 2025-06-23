@@ -38,6 +38,7 @@ interface JobListingsProps {
   currentPage?: number;
   totalPages?: number;
   totalJobs?: number;
+  jobsPerPage?: number;
   onPageChange?: (page: number) => void;
 }
 
@@ -49,6 +50,7 @@ export default function JobListings({
   currentPage = 1,
   totalPages = 1,
   totalJobs = 0,
+  jobsPerPage = 20,
   onPageChange,
 }: JobListingsProps) {
   const [, setLocation] = useLocation();
@@ -308,8 +310,8 @@ export default function JobListings({
               <div className="text-sm text-gray-700 font-medium order-2 sm:order-1">
                 <span className="hidden sm:inline">Showing </span>
                 <span className="text-gray-900 font-semibold">
-                  {(currentPage - 1) * 20 + 1}-
-                  {Math.min(currentPage * 20, totalJobs)}
+                  {(currentPage - 1) * jobsPerPage + 1}-
+                  {Math.min(currentPage * jobsPerPage, totalJobs)}
                 </span>
                 <span className="hidden sm:inline"> of </span>
                 <span className="sm:hidden"> / </span>
