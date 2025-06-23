@@ -7,6 +7,7 @@ import { jobDatabase } from "./services/jobDatabase";
 import { generateJobs, generateTechJobs, generateDataJobs } from "./services/jobGenerator";
 import { VectorStrategyFactory } from "./services/vectorStrategies";
 import { PDFService } from "./services/pdfService";
+import { LanguageTranslationService } from "./services/languageTranslationService";
 import multer from "multer";
 import { z } from "zod";
 import { insertResumeSchema, InsertJob, Job, Resume, ParsedResumeData } from "@shared/schema";
@@ -139,25 +140,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Unsupported file type" });
       }
 
-      // Parse resume with OpenAI
-      const parsedData = await parseResumeWithAI(resumeText);
+      // Step 1: Detect language and translate if necessary
+      console.log('🌍 Processing resume language...');
+      const languageResult = await LanguageTranslationService.processResumeText(resumeText);
       
-      // Generate vector representation
-      const vector = await generateResumeVector(resumeText, parsedData);
+      // Get the text to use for AI processing (translated if available, original otherwise)
+      const textForProcessing = LanguageTranslationService.getProcessingText(languageResult);
+      
+      // Log language processing results
+      const languageInfo = LanguageTranslationService.getLanguageDisplayInfo(languageResult);
+      console.log(`📊 Language processing: ${languageInfo.displayText} (${languageInfo.confidence} confidence)`);
+      
+      if (languageResult.translationError) {
+        console.log(`⚠️  Translation warning: ${languageResult.translationError}`);
+      }
 
-      // Save to storage
+      // Step 2: Parse resume with OpenAI using processed text
+      console.log('🤖 Parsing resume with AI...');
+      const parsedData = await parseResumeWithAI(textForProcessing);
+      
+      // Step 3: Generate vector representation using processed text
+      console.log('🔢 Generating vector representation...');
+      const vector = await generateResumeVector(textForProcessing, parsedData);
+
+      // Step 4: Save to storage with language information
       const resume = await storage.createResume({
         fileName,
-        originalText: resumeText,
-        parsedData
+        originalText: resumeText, // Always keep original text
+        parsedData: {
+          ...parsedData,
+          // Add language processing metadata
+          languageProcessing: {
+            detectedLanguage: languageResult.detectedLanguage,
+            languageName: languageResult.languageName,
+            confidence: languageResult.confidence,
+            wasTranslated: !!languageResult.translatedText,
+            translationError: languageResult.translationError
+          }
+        }
       });
 
       // Update with vector (simulating database update)
       (resume as any).vector = vector;
 
+      console.log('✅ Resume processing complete!');
+      console.log(`📊 Final stats: Original: ${resumeText.length} chars, Processed: ${textForProcessing.length} chars`);
+
       res.json({
         resume,
-        parsedData
+        parsedData: resume.parsedData,
+        languageProcessing: {
+          detectedLanguage: languageResult.detectedLanguage,
+          languageName: languageResult.languageName,
+          confidence: languageResult.confidence,
+          wasTranslated: !!languageResult.translatedText,
+          displayText: languageInfo.displayText
+        }
       });
     } catch (error) {
       console.error("Error processing resume:", error);

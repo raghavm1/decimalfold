@@ -19,8 +19,25 @@ interface ResumeUploadProps {
   onResumeProcessed: (data: {
     resume: { id: number };
     parsedData: ParsedResumeData;
+    languageProcessing?: {
+      detectedLanguage: string;
+      languageName: string;
+      confidence: number;
+      wasTranslated: boolean;
+      displayText: string;
+    };
   }) => void;
-  currentResume: { id: number; parsedData: ParsedResumeData } | null;
+  currentResume: {
+    id: number;
+    parsedData: ParsedResumeData;
+    languageProcessing?: {
+      detectedLanguage: string;
+      languageName: string;
+      confidence: number;
+      wasTranslated: boolean;
+      displayText: string;
+    };
+  } | null;
   onClearState?: () => void;
 }
 
@@ -147,7 +164,7 @@ export default function ResumeUpload({
                   Processing your resume...
                 </p>
                 <p className="text-sm text-blue-600">
-                  Analyzing skills and experience with AI
+                  Analyzing skills, experience, and language with AI
                 </p>
               </div>
             </div>
@@ -177,6 +194,26 @@ export default function ResumeUpload({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
+                {/* Language Processing Information */}
+                {currentResume.languageProcessing?.wasTranslated && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Language Processing
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        className={`${
+                          currentResume.languageProcessing.wasTranslated
+                            ? "bg-green-100 text-green-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {currentResume.languageProcessing.displayText}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Extracted Skills

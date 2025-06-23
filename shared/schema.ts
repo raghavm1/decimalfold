@@ -73,6 +73,13 @@ export type ParsedResumeData = {
   primaryRole: string;
   industries: string[];
   yearsOfExperience: number;
+  languageProcessing?: {
+    detectedLanguage: string;
+    languageName: string;
+    confidence: number;
+    wasTranslated: boolean;
+    translationError?: string;
+  };
 };
 
 export type MatchingStats = {

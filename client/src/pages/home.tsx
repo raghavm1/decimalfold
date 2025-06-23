@@ -22,6 +22,13 @@ export default function Home() {
   const [currentResume, setCurrentResume] = useState<{
     id: number;
     parsedData: ParsedResumeData;
+    languageProcessing?: {
+      detectedLanguage: string;
+      languageName: string;
+      confidence: number;
+      wasTranslated: boolean;
+      displayText: string;
+    };
   } | null>(null);
   const [matches, setMatches] = useState<JobWithMatch[]>([]);
   const [stats, setStats] = useState<MatchingStats>({
@@ -65,13 +72,37 @@ export default function Home() {
   const handleResumeProcessed = (resumeData: {
     resume: { id: number };
     parsedData: ParsedResumeData;
+    languageProcessing?: {
+      detectedLanguage: string;
+      languageName: string;
+      confidence: number;
+      wasTranslated: boolean;
+      displayText: string;
+    };
   }) => {
     const newResumeState = {
       id: resumeData.resume.id,
       parsedData: resumeData.parsedData,
+      languageProcessing: resumeData.languageProcessing,
     };
 
     setCurrentResume(newResumeState);
+
+    // Show a toast with language processing info if available
+    if (resumeData.languageProcessing?.wasTranslated) {
+      toast({
+        title: "Resume Translated",
+        description: `Detected ${resumeData.languageProcessing.languageName} and translated to English for better job matching.`,
+      });
+    } else if (
+      resumeData.languageProcessing &&
+      !resumeData.languageProcessing.wasTranslated
+    ) {
+      toast({
+        title: "Language Detected",
+        description: `Resume language: ${resumeData.languageProcessing.languageName}`,
+      });
+    }
 
     // Save to localStorage for state restoration
     localStorage.setItem(
