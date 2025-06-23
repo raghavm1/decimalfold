@@ -3,6 +3,114 @@ import { openai } from "./openai";
 import { PineconeService } from "./pineconeService";
 import { storage } from "../storage";
 
+/**
+ * Apply Maximal Marginal Relevance (MMR) to diversify job recommendations
+ * This prevents showing too many jobs from the same company
+ */
+export function applyMMR(
+  jobs: Array<Job & { matchScore: number; matchingSkills: string[]; confidence: string }>,
+  lambda: number = 0.7, // Balance between relevance (1.0) and diversity (0.0)
+  maxResults: number = 20
+): Array<Job & { matchScore: number; matchingSkills: string[]; confidence: string }> {
+  if (jobs.length <= maxResults) {
+    return jobs;
+  }
+
+  console.log(`🎯 Applying MMR to ${jobs.length} jobs, targeting ${maxResults} diverse results...`);
+
+  const selected: Array<Job & { matchScore: number; matchingSkills: string[]; confidence: string }> = [];
+  const remaining = [...jobs];
+  const companyCount = new Map<string, number>();
+
+  // Select the first (highest relevance) job
+  if (remaining.length > 0) {
+    const first = remaining.shift()!;
+    selected.push(first);
+    companyCount.set(first.company.toLowerCase(), 1);
+  }
+
+  // Continue selecting jobs using MMR formula
+  while (selected.length < maxResults && remaining.length > 0) {
+    let bestJob: (Job & { matchScore: number; matchingSkills: string[]; confidence: string }) | null = null;
+    let bestMMRScore = -1;
+    let bestIndex = -1;
+
+    for (let i = 0; i < remaining.length; i++) {
+      const job = remaining[i];
+      const relevanceScore = job.matchScore; // Original relevance score from Pinecone
+
+      // Calculate diversity score (how different this job is from selected jobs)
+      let diversityScore = 1.0;
+      
+      // Company diversity: penalize jobs from companies we already have
+      const company = job.company.toLowerCase();
+      const existingFromSameCompany = companyCount.get(company) || 0;
+      
+      if (existingFromSameCompany > 0) {
+        // Heavy penalty for duplicate companies
+        diversityScore *= Math.pow(0.3, existingFromSameCompany);
+      }
+
+      // Location diversity: slight penalty for same location
+      const sameLocationCount = selected.filter(s => 
+        s.location.toLowerCase() === job.location.toLowerCase()
+      ).length;
+      if (sameLocationCount > 2) {
+        diversityScore *= 0.8; // 20% penalty for location clustering
+      }
+
+      // Industry diversity: slight penalty for same industry
+      const sameIndustryCount = selected.filter(s => 
+        s.industry.toLowerCase() === job.industry.toLowerCase()
+      ).length;
+      if (sameIndustryCount > 3) {
+        diversityScore *= 0.9; // 10% penalty for industry clustering
+      }
+
+      // MMR formula: λ * relevance + (1-λ) * diversity
+      const mmrScore = lambda * relevanceScore + (1 - lambda) * diversityScore;
+
+      if (mmrScore > bestMMRScore) {
+        bestMMRScore = mmrScore;
+        bestJob = job;
+        bestIndex = i;
+      }
+    }
+
+    // Add the best job and remove from remaining
+    if (bestJob && bestIndex >= 0) {
+      selected.push(bestJob);
+      remaining.splice(bestIndex, 1);
+      
+      // Update company count
+      const company = bestJob.company.toLowerCase();
+      companyCount.set(company, (companyCount.get(company) || 0) + 1);
+    } else {
+      break; // No more valid jobs
+    }
+  }
+
+  // Log diversity metrics
+  const companyDiversity = new Set(selected.map(j => j.company.toLowerCase())).size;
+  const locationDiversity = new Set(selected.map(j => j.location.toLowerCase())).size;
+  const industryDiversity = new Set(selected.map(j => j.industry.toLowerCase())).size;
+
+  console.log(`✨ MMR Results: ${selected.length} jobs selected`);
+  console.log(`   📊 Company diversity: ${companyDiversity} unique companies`);
+  console.log(`   🌍 Location diversity: ${locationDiversity} unique locations`);
+  console.log(`   🏭 Industry diversity: ${industryDiversity} unique industries`);
+  
+  // Show top companies
+  const topCompanies = Array.from(companyCount.entries())
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 5)
+    .map(([company, count]) => `${company}(${count})`)
+    .join(', ');
+  console.log(`   🏢 Top companies: ${topCompanies}`);
+
+  return selected;
+}
+
 export function cosineSimilarity(vectorA: number[], vectorB: number[]): number {
   if (vectorA.length !== vectorB.length) {
     throw new Error("Vectors must have the same length");
@@ -351,7 +459,7 @@ Response must be valid JSON only:
 }
 
 /**
- * Find job matches using Pinecone vector search instead of in-memory processing
+ * Find job matches using Pinecone vector search with MMR diversification
  */
 export async function findJobMatchesWithPinecone(
   resume: Resume,
@@ -359,7 +467,7 @@ export async function findJobMatchesWithPinecone(
   limit: number = 20
 ): Promise<Array<Job & { matchScore: number; matchingSkills: string[]; confidence: string }>> {
   try {
-    console.log(`🔍 Finding top ${limit} job matches using Pinecone vector search...`);
+    console.log(`🔍 Finding top ${limit} job matches using Pinecone vector search with MMR...`);
     
     // Initialize Pinecone service
     const pineconeService = new PineconeService();
@@ -377,10 +485,11 @@ export async function findJobMatchesWithPinecone(
       resumeVector = response.data[0].embedding;
     }
 
-    // Query Pinecone for similar jobs
-    console.log(`🔍 Querying Pinecone for top ${limit} similar jobs...`);
+    // Query Pinecone for more jobs to allow for MMR diversification
+    const searchLimit = Math.max(limit * 2.5, 50); // Get 2.5x more jobs for MMR selection
+    console.log(`🔍 Querying Pinecone for top ${searchLimit} similar jobs for MMR diversification...`);
     const searchResults = await pineconeService.searchSimilarJobs(resumeVector, {
-      topK: limit,
+      topK: searchLimit,
       includeMetadata: true
     });
 
@@ -434,7 +543,13 @@ export async function findJobMatchesWithPinecone(
     console.log(`✅ Successfully matched ${matchedJobs.length} jobs with scores`);
     
     // Sort by match score (highest first)
-    return matchedJobs.sort((a, b) => b.matchScore - a.matchScore);
+    const sortedMatchedJobs = matchedJobs.sort((a, b) => b.matchScore - a.matchScore);
+
+    // Apply MMR to diversify job recommendations and reduce company clustering
+    console.log(`🎯 Applying MMR diversification to select ${limit} jobs from ${sortedMatchedJobs.length} candidates...`);
+    const diversifiedMatches = applyMMR(sortedMatchedJobs, 0.7, limit);
+
+    return diversifiedMatches;
       
   } catch (error) {
     console.error('❌ Error in Pinecone-based job matching:', error);
