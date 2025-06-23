@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: smartcareermatch-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build:server
+    startCommand: npm run start:server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_URL
+        value: https://your-app-name.vercel.app
+    # Add your environment variables here
+    # - key: OPENAI_API_KEY
+    #   fromGroup: smartcareermatch-secrets
+    # - key: PINECONE_API_KEY
+    #   fromGroup: smartcareermatch-secrets
+    # - key: DATABASE_URL
+    #   fromGroup: smartcareermatch-secrets
