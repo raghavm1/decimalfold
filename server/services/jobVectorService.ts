@@ -48,38 +48,11 @@ export class JobVectorService {
         ? `Salary: $${job.salaryMin.toLocaleString()} - $${job.salaryMax.toLocaleString()}`
         : '',
       
-      // 7. Key parts of job description (truncated to avoid noise)
-      `Description: ${this.extractKeyDescription(job.description)}`
+      // 7. Full job description for complete context
+      `Description: ${job.description}`
     ].filter(Boolean);
     
     return sections.join('\n\n');
-  }
-
-  /**
-   * Extract the most relevant parts of job description
-   */
-  private static extractKeyDescription(description: string): string {
-    // Look for key responsibility sections
-    const keywordSections = [
-      'Key Responsibilities',
-      'Responsibilities',
-      'What you\'ll do',
-      'Role Overview',
-      'About the Role'
-    ];
-    
-    for (const keyword of keywordSections) {
-      if (description.includes(keyword)) {
-        const section = description.split(keyword)[1];
-        if (section) {
-          // Take first 400 characters after the keyword
-          return section.substring(0, 400).trim();
-        }
-      }
-    }
-    
-    // If no specific section found, take first 400 characters
-    return description.substring(0, 400).trim();
   }
 
   /**

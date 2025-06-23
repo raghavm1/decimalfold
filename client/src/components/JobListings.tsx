@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Filter, Search, DollarSign, Clock } from "lucide-react";
+import { Filter, Search, DollarSign, Clock, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,35 +20,60 @@ interface JobListingsProps {
   jobs: Job[];
   isLoading: boolean;
   resumeId?: number;
+  onFiltersChange?: (filters: {
+    search: string;
+    experienceLevel: string;
+    workType: string;
+  }) => void;
 }
 
 export default function JobListings({
   jobs,
   isLoading,
   resumeId,
+  onFiltersChange,
 }: JobListingsProps) {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("All Levels");
   const [workType, setWorkType] = useState("All Types");
 
-  const filteredJobs = jobs.filter((job) => {
-    const matchesQuery =
-      !searchQuery ||
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.skills.some((skill) =>
-        skill.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  // Debounced server-side filtering
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (onFiltersChange) {
+        onFiltersChange({
+          search: searchQuery,
+          experienceLevel:
+            experienceLevel === "All Levels" ? "" : experienceLevel,
+          workType: workType === "All Types" ? "" : workType,
+        });
+      }
+    }, 500); // 500ms debounce
 
-    const matchesExperience =
-      experienceLevel === "All Levels" ||
-      job.experienceLevel === experienceLevel;
-    const matchesWorkType =
-      workType === "All Types" || job.workType === workType;
+    return () => clearTimeout(timer);
+  }, [searchQuery, experienceLevel, workType, onFiltersChange]);
 
-    return matchesQuery && matchesExperience && matchesWorkType;
-  });
+  // Client-side filtering as fallback when no server-side filtering
+  const filteredJobs = onFiltersChange
+    ? jobs
+    : jobs.filter((job) => {
+        const matchesQuery =
+          !searchQuery ||
+          job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          job.skills.some((skill) =>
+            skill.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+
+        const matchesExperience =
+          experienceLevel === "All Levels" ||
+          job.experienceLevel === experienceLevel;
+        const matchesWorkType =
+          workType === "All Types" || job.workType === workType;
+
+        return matchesQuery && matchesExperience && matchesWorkType;
+      });
 
   const getCompanyInitials = (company: string): string => {
     return company
@@ -74,49 +99,9 @@ export default function JobListings({
     return gradients[index];
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="w-5 h-5" />
-              Job Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-start space-x-4 p-4">
-                  <Skeleton className="w-12 h-12 rounded-lg" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-4 w-1/3" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Search and Filters */}
+      {/* Search and Filters - Always visible */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -135,9 +120,18 @@ export default function JobListings({
                 placeholder="Search by title, company, or skills..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 pr-10"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -192,7 +186,26 @@ export default function JobListings({
         <CardContent className="p-0">
           <ScrollArea className="h-96">
             <div className="divide-y divide-gray-100">
-              {filteredJobs.length === 0 ? (
+              {isLoading ? (
+                // Loading state for jobs only
+                <div className="space-y-4 p-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-start space-x-4 p-4">
+                      <Skeleton className="w-12 h-12 rounded-lg" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-5 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-1/3" />
+                        <div className="flex space-x-2 mt-3">
+                          <Skeleton className="h-5 w-16" />
+                          <Skeleton className="h-5 w-20" />
+                          <Skeleton className="h-5 w-14" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredJobs.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">
                   No jobs found matching your criteria
                 </div>

@@ -1,5 +1,7 @@
 import type { Job, Resume, ParsedResumeData } from "@shared/schema";
 import { openai } from "./openai";
+import { PineconeService } from "./pineconeService";
+import { storage } from "../storage";
 
 export function cosineSimilarity(vectorA: number[], vectorB: number[]): number {
   if (vectorA.length !== vectorB.length) {
@@ -345,5 +347,97 @@ Response must be valid JSON only:
       appropriateMatches: jobMatches.slice(0, topK),
       filteredOut: []
     };
+  }
+}
+
+/**
+ * Find job matches using Pinecone vector search instead of in-memory processing
+ */
+export async function findJobMatchesWithPinecone(
+  resume: Resume,
+  parsedData: ParsedResumeData,
+  limit: number = 20
+): Promise<Array<Job & { matchScore: number; matchingSkills: string[]; confidence: string }>> {
+  try {
+    console.log(`🔍 Finding top ${limit} job matches using Pinecone vector search...`);
+    
+    // Initialize Pinecone service
+    const pineconeService = new PineconeService();
+    
+    // Generate resume vector if not exists
+    let resumeVector = resume.vector;
+    if (!resumeVector) {
+      console.log('📄 Generating resume vector...');
+      const resumeText = `${parsedData.primaryRole} ${parsedData.skills.join(' ')} ${parsedData.industries.join(' ')}`;
+      const response = await openai.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: resumeText,
+        encoding_format: 'float'
+      });
+      resumeVector = response.data[0].embedding;
+    }
+
+    // Query Pinecone for similar jobs
+    console.log(`🔍 Querying Pinecone for top ${limit} similar jobs...`);
+    const searchResults = await pineconeService.searchSimilarJobs(resumeVector, {
+      topK: limit,
+      includeMetadata: true
+    });
+
+    console.log(`� Found ${searchResults.length} potential matches from Pinecone`);
+
+    // Get job details from database for the matched job IDs
+    const jobIds = searchResults.map(result => {
+      const match = result.id.match(/job_(\d+)/);
+      return match ? parseInt(match[1]) : null;
+    }).filter(id => id !== null) as number[];
+
+    console.log(`🔍 Fetching ${jobIds.length} job details from database...`);
+    const jobPromises = jobIds.map(id => storage.getJobById(id));
+    const jobResults = await Promise.all(jobPromises);
+    const jobs = jobResults.filter(job => job !== undefined) as Job[];
+
+    // Combine Pinecone scores with job data and add skill matching
+    const matchedJobs = searchResults.map(result => {
+      const match = result.id.match(/job_(\d+)/);
+      if (!match) return null;
+      
+      const jobId = parseInt(match[1]);
+      const job = jobs.find((j: Job) => j.id === jobId);
+      if (!job) return null;
+
+      // Calculate skill overlap for matching skills
+      const jobSkills = job.skills.map((skill: string) => skill.toLowerCase());
+      const resumeSkills = parsedData.skills.map((skill: string) => skill.toLowerCase());
+      const matchingSkills = jobSkills.filter((skill: string) => 
+        resumeSkills.some((resumeSkill: string) => 
+          resumeSkill.includes(skill) || skill.includes(resumeSkill)
+        )
+      );
+
+      // Convert Pinecone score (0-1) to percentage and determine confidence
+      const scorePercent = (result.score || 0) * 100;
+      let confidence = "Low";
+      if (scorePercent >= 85) confidence = "High";
+      else if (scorePercent >= 70) confidence = "Medium";
+
+      return {
+        ...job,
+        matchScore: Math.round(scorePercent) / 100,
+        matchingSkills: job.skills.filter((skill: string) => 
+          matchingSkills.includes(skill.toLowerCase())
+        ),
+        confidence
+      };
+    }).filter(Boolean) as Array<Job & { matchScore: number; matchingSkills: string[]; confidence: string }>;
+
+    console.log(`✅ Successfully matched ${matchedJobs.length} jobs with scores`);
+    
+    // Sort by match score (highest first)
+    return matchedJobs.sort((a, b) => b.matchScore - a.matchScore);
+      
+  } catch (error) {
+    console.error('❌ Error in Pinecone-based job matching:', error);
+    throw error;
   }
 }

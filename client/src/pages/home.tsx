@@ -31,10 +31,36 @@ export default function Home() {
     processingTime: "0s",
   });
   const [showGenerator, setShowGenerator] = useState(false);
+  const [jobFilters, setJobFilters] = useState({
+    search: "",
+    experienceLevel: "",
+    workType: "",
+  });
 
   const { data: jobs = [], isLoading: jobsLoading } = useQuery<Job[]>({
-    queryKey: ["/api/jobs"],
+    queryKey: ["/api/jobs", jobFilters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (jobFilters.search) params.append("search", jobFilters.search);
+      if (jobFilters.experienceLevel)
+        params.append("experienceLevel", jobFilters.experienceLevel);
+      if (jobFilters.workType) params.append("workType", jobFilters.workType);
+
+      const response = await fetch(`/api/jobs?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch jobs");
+      }
+      return response.json();
+    },
   });
+
+  const handleFiltersChange = (filters: {
+    search: string;
+    experienceLevel: string;
+    workType: string;
+  }) => {
+    setJobFilters(filters);
+  };
 
   const handleResumeProcessed = (resumeData: {
     resume: { id: number };
@@ -236,6 +262,7 @@ export default function Home() {
               jobs={jobs}
               isLoading={jobsLoading}
               resumeId={currentResume?.id}
+              onFiltersChange={handleFiltersChange}
             />
           </div>
 

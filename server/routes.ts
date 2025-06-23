@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { parseResumeWithAI, generateJobVector, generateResumeVector } from "./services/openai";
-import { findTopMatches } from "./services/vectorMatcher";
+import { findTopMatches, findJobMatchesWithPinecone } from "./services/vectorMatcher";
 import { jobDatabase } from "./services/jobDatabase";
 import { generateJobs, generateTechJobs, generateDataJobs } from "./services/jobGenerator";
 import { VectorStrategyFactory } from "./services/vectorStrategies";
@@ -175,11 +175,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Resume not found" });
       }
 
-      const allJobs = await storage.getAllJobs();
-      const matches = await findTopMatches(allJobs, resume, resume.parsedData as any, 5);
+      // Use Pinecone for efficient vector similarity search
+      console.log(`🔍 Finding job matches for resume ${resumeId} using Pinecone...`);
+      const matches = await findJobMatchesWithPinecone(resume, resume.parsedData as any, 20);
+
+      // Filter to top 5 matches for response
+      const topMatches = matches.slice(0, 5);
 
       // Store match results
-      for (const match of matches) {
+      for (const match of topMatches) {
         await storage.createJobMatch({
           resumeId,
           jobId: match.id,
@@ -189,13 +193,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Get total jobs count for stats
+      const totalJobsCount = await storage.getAllJobs().then(jobs => jobs.length);
+
       res.json({
-        matches,
+        matches: topMatches,
         stats: {
-          totalJobs: allJobs.length,
-          matchesFound: matches.length,
-          avgMatchScore: matches.length > 0 ? 
-            Math.round(matches.reduce((sum, m) => sum + m.matchScore, 0) / matches.length * 100) + '%' : 
+          totalJobs: totalJobsCount,
+          matchesFound: topMatches.length,
+          avgMatchScore: topMatches.length > 0 ? 
+            Math.round(topMatches.reduce((sum, m) => sum + m.matchScore, 0) / topMatches.length * 100) + '%' : 
             '-',
           processingTime: '2.3s'
         }

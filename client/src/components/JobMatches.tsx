@@ -1,10 +1,18 @@
 import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Sparkles, Star, TrendingUp, Users, ExternalLink } from "lucide-react";
+import {
+  Sparkles,
+  Star,
+  TrendingUp,
+  Users,
+  ExternalLink,
+  Loader2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { JobWithMatch, MatchingStats } from "@shared/schema";
@@ -109,25 +117,72 @@ export default function JobMatches({
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-accent" />
           Top Job Matches
+          {findMatchesMutation.isPending && (
+            <Loader2 className="w-4 h-4 text-accent animate-spin" />
+          )}
           <span className="text-sm font-normal text-gray-500 ml-2">
-            {matches.length > 0
+            {findMatchesMutation.isPending
+              ? "(Finding matches...)"
+              : matches.length > 0
               ? `(${matches.length} matches found)`
               : "(Upload resume to see matches)"}
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {matches.length === 0 ? (
+        {findMatchesMutation.isPending ? (
+          // Loading State
+          <div className="space-y-4">
+            <div className="text-center py-4">
+              <div className="flex items-center justify-center gap-2 text-gray-600">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="text-sm font-medium">
+                  Analyzing your resume and finding the best job matches...
+                </span>
+              </div>
+            </div>
+            {/* Loading skeleton cards */}
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="border rounded-lg p-6 bg-gray-50/50">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start space-x-4">
+                    <Skeleton className="w-12 h-12 rounded-lg" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-5 w-48" />
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-40" />
+                    </div>
+                  </div>
+                  <div className="text-right space-y-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-2">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-5 w-14" />
+                  </div>
+                  <Skeleton className="h-8 w-24" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : matches.length === 0 ? (
           // Empty State
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Sparkles className="w-8 h-8 text-gray-300" />
             </div>
             <h3 className="text-lg font-medium text-gray-500 mb-2">
-              No matches yet
+              {resumeId ? "No matches found" : "No matches yet"}
             </h3>
             <p className="text-gray-400">
-              Upload your resume to discover perfectly matched job opportunities
+              {resumeId 
+                ? "We don't have any relevant opportunities at the moment. Check back later for new matches!"
+                : "Upload your resume to discover perfectly matched job opportunities"
+              }
             </p>
           </div>
         ) : (
