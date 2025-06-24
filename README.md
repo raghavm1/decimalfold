@@ -1,8 +1,8 @@
-# SmartCareerMatch
+# DecimalFold
 
 ## Overview
 
-SmartCareerMatch is an AI-powered job matching platform that analyzes resumes and finds relevant job opportunities using semantic similarity matching. The application processes resumes in-memory, extracts key information using AI, and matches candidates with jobs from a comprehensive database using vector embeddings.
+DecimalFold is an AI-powered job matching platform that analyzes resumes and finds relevant job opportunities using semantic similarity matching. The application processes resumes in-memory, extracts key information using AI, and matches candidates with jobs from a comprehensive database using vector embeddings.
 
 ## Key Features
 
