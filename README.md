@@ -1,152 +1,227 @@
-# 🎯 DecimalFold
+# SmartCareerMatch
 
-> AI-Powered Resume-to-Job Matching Platform with Advanced Vector Search
+## Overview
 
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)
-![Pinecone](https://img.shields.io/badge/Pinecone-000000?style=for-the-badge&logo=pinecone&logoColor=white)
+SmartCareerMatch is an AI-powered job matching platform that analyzes resumes and finds relevant job opportunities using semantic similarity matching. The application processes resumes in-memory, extracts key information using AI, and matches candidates with jobs from a comprehensive database using vector embeddings.
 
-## 📋 Overview
-
-DecimalFold is a sophisticated AI-powered platform that revolutionizes job matching by leveraging advanced natural language processing and vector similarity search. The system intelligently analyzes resumes and matches candidates with relevant job opportunities using state-of-the-art machine learning techniques.
-
-## ✨ Key Features
+## Key Features
 
 ### 🤖 AI-Powered Resume Analysis
 
-- **OpenAI GPT-4o Integration**: Advanced resume parsing and skill extraction
-- **Multi-format Support**: PDF, DOCX, TXT file processing
-- **Language Detection & Translation**: Automatic language detection with translation support
-- **Intelligent Parsing**: Extracts skills, experience level, role, and industry background
-
-### 🔍 Advanced Vector Search
-
-- **Semantic Similarity**: Uses OpenAI embeddings for deep contextual understanding
-- **Pinecone Vector Database**: Scalable, high-performance vector search
-- **Cosine Similarity Matching**: Precise relevance scoring between resumes and jobs
-- **Real-time Processing**: Instant job matching with sub-second response times
+- Automatic extraction of skills, experience level, job roles, and industries from resumes
+- Support for PDF, DOC, DOCX, and TXT file formats
+- Intelligent parsing using OpenAI GPT-4 for accurate data extraction
+- Multi-language support with automatic language detection and translation
 
 ### 🎯 Smart Job Matching
 
-- **MMR (Maximal Marginal Relevance)**: Diversified results to avoid redundancy
-- **Industry Filtering**: Targeted matching within specific industries
-- **Experience Level Alignment**: Matches based on career progression
-- **Confidence Scoring**: High/Medium/Low confidence indicators
+- Semantic similarity matching using OpenAI embeddings (text-embedding-ada-002)
+- Vector-based job recommendations with confidence scores
+- Support for both PostgreSQL-based and Pinecone vector search
+- Matching statistics including average scores and processing time
 
-### 📊 Performance & Scalability
+### 📊 Comprehensive Job Database
 
-- **Memory Optimized**: Efficient resource utilization
-- **Batch Processing**: Handles large datasets (tested up to 100K jobs)
-- **Caching Strategy**: Optimized vector storage and retrieval
-- **Production Ready**: Built for enterprise-scale deployment
+- 20,000+ generated job listings across multiple industries
+- Categories include Software Engineering, Data Science, Product Management, Marketing, Sales, and more
+- Realistic job data with proper salary ranges, company information, and requirements
+- Advanced filtering by experience level, work type, location, and keywords
 
-- **PostgreSQL** with Neon serverless database support
-- **In-memory storage** for development and testing
-- **Vector embeddings** stored for efficient similarity calculations
+### 🔍 Advanced Search & Filtering
 
-### Development Tools
+- Real-time job search with pagination
+- Filter by experience level, work type, company size, and location
+- Keyword search across job titles, descriptions, and requirements
+- Responsive UI with modern design patterns
 
-- **ESBuild** for fast JavaScript bundling
-- **PostCSS** with Autoprefixer for CSS processing
-- **Hot Module Replacement** for instant development feedback
-- **TypeScript strict mode** for maximum type safety
+## Technical Architecture
 
-## 📦 Installation & Setup
+### Frontend Stack
+
+- **React 18** with TypeScript for component-based UI development
+- **Vite** for fast development builds and HMR
+- **Tailwind CSS** + **shadcn/ui** for modern, accessible component library
+- **TanStack Query** for server state management and caching
+- **Wouter** for lightweight client-side routing
+- **React Hook Form** with Zod validation for form handling
+
+### Backend Stack
+
+- **Node.js** with **Express.js** for RESTful API server
+- **TypeScript** for type-safe backend development
+- **Drizzle ORM** with PostgreSQL for type-safe database operations
+- **Multer** for efficient file upload handling
+- **Express Sessions** for user session management
+
+### Database & Storage
+
+- **PostgreSQL** (Neon) as primary database for jobs, resumes, and matches
+- **Pinecone** vector database for high-performance similarity search
+- (Coming soon) **In-memory processing** for resume files (no persistent file storage)
+- Optimized schema with proper indexing for fast queries
+
+### AI & Machine Learning
+
+- **OpenAI GPT-4** for intelligent resume parsing and data extraction
+- **OpenAI Embeddings** (text-embedding-ada-002) for vector generation
+- **Custom vector matching algorithms** with multiple similarity strategies
+- **Language translation service** for multi-language resume support
+
+### File Processing Pipeline
+
+- **PDF extraction** using pdf2json and pdfjs-dist
+- **Word document processing** with mammoth.js
+- **Language detection** with automatic translation capabilities
+- **Memory-optimized processing** - files processed in-memory and buffers cleared immediately
+
+## Memory & Performance Optimizations
+
+### Resume Handling
+
+- **Optimized vector generation** using full processed text for high-quality embeddings
+
+### Database Efficiency
+
+- **Selective data storage** - only essential parsed data and vectors stored in database
+- **Paginated queries** with proper indexing for fast job retrieval
+- **Optimized vector operations** with batched processing for large datasets
+- **Smart caching strategies** using React Query for reduced API calls
+
+## Development Setup
 
 ### Prerequisites
 
-- Node.js 18+ installed
-- OpenAI API key for resume parsing and vector generation
-- Pinecone index
-- Neon/postgres database connection
+- Node.js 18+ and npm
+- PostgreSQL database (Neon recommended)
+- OpenAI API key
+- Pinecone API key (optional, for vector search)
 
-### Environment Setup
-
-1. Clone the repository:
+### Environment Variables
 
 ```bash
-git clone <repository-url>
-cd ai-job-matcher
+DATABASE_URL=postgresql://user:password@host:port/database
+OPENAI_API_KEY=sk-your-openai-api-key
+PINECONE_API_KEY=your-pinecone-api-key  # Optional
+PINECONE_INDEX_NAME=smartcareermatch      # Optional
 ```
 
-2. Install dependencies:
+### Installation
 
 ```bash
+# Install dependencies
 npm install
-```
 
-3. Set up environment variables:
-   - The application requires an OpenAI API key
-   - Use the Replit secrets manager or create a `.env` file:
+# Set up database schema
+npm run db:push
 
-```bash
-OPENAI_API_KEY=your_openai_api_key_here
-```
-
-4. Start the development server:
-
-```bash
+# Start development server (runs both client and server)
 npm run dev
 ```
 
-The application will be available at `http://localhost:5000`
-
-## 🚀 Usage
-
-### Basic Resume Matching
-
-1. **Upload Resume**: Drag and drop or click to upload a resume file (PDF, DOCX, or TXT)
-2. **AI Processing**: The system automatically parses the resume using OpenAI GPT-4o
-3. **Job Matching**: Vector similarity algorithms find relevant job matches
-4. **View Results**: Browse ranked job matches with confidence scores and skill overlaps
-
-### Scalability Testing
-
-1. **Generate Jobs**: Use the job generation API to create test datasets
+### Available Scripts
 
 ```bash
-# Generate 1000 general jobs
-curl -X POST http://localhost:5000/api/jobs/generate \
-  -H "Content-Type: application/json" \
-  -d '{"count": 1000, "type": "general"}'
-
-# Generate 5000 tech-focused jobs
-curl -X POST http://localhost:5000/api/jobs/generate \
-  -H "Content-Type: application/json" \
-  -d '{"count": 5000, "type": "tech"}'
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run check        # Type checking
+npm run db:push      # Push schema changes to database
 ```
 
-2. **Test Vector Strategies**: Compare different matching algorithms
+## API Documentation
 
-```bash
-# Test TF-IDF strategy
-curl -X POST http://localhost:5000/api/resume/1/matches/strategy \
-  -H "Content-Type: application/json" \
-  -d '{"strategy": "tfidf"}'
+### Core Endpoints
 
-# Test skill-based matching
-curl -X POST http://localhost:5000/api/resume/1/matches/strategy \
-  -H "Content-Type: application/json" \
-  -d '{"strategy": "skill"}'
+#### Jobs
+
+- `GET /api/jobs` - Get paginated job listings with optional filtering
+  - Query params: `search`, `experienceLevel`, `workType`, `page`, `limit`
+- `GET /api/jobs/all` - Get all jobs (legacy endpoint)
+
+#### Resume Processing
+
+- `POST /api/resume/upload` - Upload and process resume file
+  - Accepts: PDF, DOC, DOCX, TXT files (max 10MB)
+  - Returns: Parsed resume data, language info, and vector
+
+#### Job Matching
+
+- `POST /api/matches` - Find job matches for processed resume
+  - Body: `{ parsedData, vector, processedText }`
+  - Returns: Ranked job matches with scores and statistics
+
+#### Job Generation (Development)
+
+- `POST /api/jobs/generate` - Generate sample jobs for testing
+- `POST /api/jobs/generate-tech` - Generate technology-focused jobs
+- `POST /api/jobs/generate-data` - Generate data science jobs
+
+## Data Models
+
+### Job Schema
+
+```typescript
+{
+  id: number;
+  title: string;
+  company: string;
+  location: string;
+  workType: string;        // Full-time, Part-time, Contract, Remote
+  experienceLevel: string; // Entry, Mid, Senior, Leadership
+  salaryMin: number;
+  salaryMax: number;
+  description: string;
+  requirements: string;
+  skills: string[];
+  industry: string;
+  vector: number[];        // OpenAI embedding
+}
 ```
 
-### Available Vector Strategies
+### Parsed Resume Data
 
-#### 1. TF-IDF Strategy
+```typescript
+{
+  skills: string[];
+  experienceLevel: string;
+  primaryRole: string;
+  industries: string[];
+  yearsOfExperience: number;
+  languageProcessing?: {
+    detectedLanguage: string;
+    wasTranslated: boolean;
+    confidence: number;
+  };
+}
+```
 
-- **Best for**: Large-scale text analysis and semantic understanding
-- **Approach**: Term Frequency-Inverse Document Frequency vectorization
-- **Pros**: Captures semantic relationships, scales well with large datasets
-- **Cons**: May miss exact skill matches
+## Production Deployment
 
-#### 2. Skill-based Strategy
+The application is designed for deployment on modern platforms:
 
-- **Best for**: Exact technical skill matching
-- **Approach**: Direct skill overlap and experience level weighting
-- **Pros**: Precise skill matching, fast computation
+- **Vercel/Netlify** for frontend static hosting
+- **Railway/Render** for Node.js backend hosting
+- **Neon** for managed PostgreSQL
+- **Pinecone** for managed vector database
+
+Build artifacts are optimized with:
+
+- Client-side code splitting and tree shaking
+- Server-side bundle optimization with esbuild
+- Environment-specific configurations
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 - **Cons**: May miss semantic similarities
 
 #### 3. Hybrid Strategy
@@ -231,32 +306,7 @@ npm run preview      # Preview production build locally
 
 ### Benchmarks (tested on standard hardware)
 
-- **Resume Processing**: ~2-4 seconds (including OpenAI API calls)
-- **Job Matching**:
-  - 1K jobs: ~50ms
-  - 10K jobs: ~200ms
-  - 100K jobs: ~1.5s (with optimized vector strategies)
 - **Vector Generation**: ~100ms per job (cached after first generation)
-
-### Optimization Features
-
-- **Text Truncation**: Automatic handling of OpenAI token limits
-- **Vector Caching**: Avoid regenerating vectors for existing jobs
-- **Batch Processing**: Efficient database operations for large datasets
-- **Lazy Loading**: Progressive loading of job results
-
-## 🤝 Contributing
-
-This is a demonstration project showcasing modern full-stack development practices with AI integration. Feel free to fork and extend the functionality for your own use cases.
-
-### Potential Enhancements
-
-- Integration with real job boards (Indeed, LinkedIn, etc.)
-- Advanced filtering and search capabilities
-- User accounts and saved searches
-- Email notifications for new matches
-- Company-specific matching algorithms
-- A/B testing framework for different strategies
 
 ## 📄 License
 
@@ -264,11 +314,12 @@ This project is for educational and demonstration purposes. Please ensure you ha
 
 ## 🔑 Environment Variables
 
-| Variable         | Description                               | Required                               |
-| ---------------- | ----------------------------------------- | -------------------------------------- |
-| `OPENAI_API_KEY` | OpenAI API key for GPT-4o and embeddings  | Yes                                    |
-| `DATABASE_URL`   | PostgreSQL connection string              | No (uses in-memory storage by default) |
-| `NODE_ENV`       | Environment mode (development/production) | No                                     |
+| Variable           | Description                              | Required                               |
+| ------------------ | ---------------------------------------- | -------------------------------------- |
+| `OPENAI_API_KEY`   | OpenAI API key for GPT-4o and embeddings | Yes                                    |
+| `DATABASE_URL`     | PostgreSQL connection string             | No (uses in-memory storage by default) |
+| `PINECONE_INDEX`   | Pinecone index name                      | Yes                                    |
+| `PINECONE_API_KEY` | Pinecone API Key                         | Yes                                    |
 
 ## 🐛 Troubleshooting
 
@@ -284,15 +335,6 @@ This project is for educational and demonstration purposes. Please ensure you ha
    - Ensure files are under 10MB
    - Supported formats: PDF, DOCX, TXT
    - Check file permissions and disk space
-
-3. **Performance with Large Datasets**
-   - Use vector strategies for better performance with 10k+ jobs
-   - Consider implementing pagination for UI
-   - Monitor memory usage during large job generation
-
-### Getting Help
-
-Check the console logs for detailed error messages and API response information. The application includes comprehensive error handling and user-friendly error messages.
 
 ### macOS Rosetta Issues
 
