@@ -2,14 +2,14 @@
 
 ## Overview
 
-DecimalFold is an AI-powered job matching platform that analyzes resumes and finds relevant job opportunities using semantic similarity matching. The application processes resumes in-memory, extracts key information using AI, and matches candidates with jobs from a comprehensive database using vector embeddings.
+DecimalFold is an AI-powered job matching platform that analyzes resumes and finds relevant job opportunities using semantic similarity matching. The application processes resumes, extracts key information using AI, and matches candidates with jobs from a comprehensive database using vector embeddings.
 
 ## Key Features
 
 ### 🤖 AI-Powered Resume Analysis
 
 - Automatic extraction of skills, experience level, job roles, and industries from resumes
-- Support for PDF, DOC, DOCX, and TXT file formats
+- Support for PDF, DOCX, and TXT file formats (max 2MB)
 - Intelligent parsing using OpenAI GPT-4 for accurate data extraction
 - Multi-language support with automatic language detection and translation
 
@@ -82,7 +82,7 @@ DecimalFold is an AI-powered job matching platform that analyzes resumes and fin
 
 ### Database Efficiency
 
-- **Selective data storage** - only essential parsed data and vectors stored in database
+- **Selective data storage** - Essential parsed data and vectors stored in database
 - **Paginated queries** with proper indexing for fast job retrieval
 - **Optimized vector operations** with batched processing for large datasets
 - **Smart caching strategies** using React Query for reduced API calls
@@ -278,10 +278,6 @@ Build artifacts are optimized with:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 - **Cons**: May miss semantic similarities
 
 #### 3. Hybrid Strategy
@@ -322,13 +318,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 4. **Job Matching** → Vector similarity calculation → Ranked results
 5. **UI Display** → Real-time updates → Interactive job listings
 
-### Scaling Considerations
-
-- **Vector Databases**: Ready for integration with Pinecone or Weaviate for 100k+ jobs
-- **Caching**: Redis integration for frequently accessed vectors
-- **Batch Processing**: Async job processing for large-scale operations
-- **API Rate Limiting**: Built-in handling for OpenAI API limits
-
 ## 🔧 Development
 
 ### Project Structure
@@ -361,12 +350,6 @@ npm run dev          # Start development server with hot reload
 npm run build        # Build production bundle
 npm run preview      # Preview production build locally
 ```
-
-## 🚦 Performance
-
-### Benchmarks (tested on standard hardware)
-
-- **Vector Generation**: ~100ms per job (cached after first generation)
 
 ## 📄 License
 
