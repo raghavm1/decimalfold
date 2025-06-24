@@ -1,52 +1,47 @@
-# AI-Powered Job Matcher
+# 🎯 DecimalFold
 
-A sophisticated full-stack web application that uses artificial intelligence to intelligently match resumes with relevant job opportunities. Built with modern web technologies and designed for scalability, this application can handle everything from small-scale testing with 100 jobs to large-scale deployment with 100,000+ job listings.
+> AI-Powered Resume-to-Job Matching Platform with Advanced Vector Search
 
-## 🚀 Features
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)
+![Pinecone](https://img.shields.io/badge/Pinecone-000000?style=for-the-badge&logo=pinecone&logoColor=white)
 
-### Core Functionality
+## 📋 Overview
 
-- **AI-Powered Resume Parsing**: Uses OpenAI GPT-4o to extract skills, experience level, and professional details from resumes
-- **Intelligent Job Matching**: Vector-based similarity matching using cosine similarity algorithms
-- **Multiple File Format Support**: Upload resumes in PDF, DOCX, or TXT formats
-- **Real-time Processing**: Instant resume analysis and job matching
-- **Professional UI**: Clean, responsive interface inspired by modern recruiting platforms
+DecimalFold is a sophisticated AI-powered platform that revolutionizes job matching by leveraging advanced natural language processing and vector similarity search. The system intelligently analyzes resumes and matches candidates with relevant job opportunities using state-of-the-art machine learning techniques.
 
-### Scalability & Testing
+## ✨ Key Features
 
-- **Scalable Job Generation**: Generate anywhere from 100 to 100,000 jobs for performance testing
-- **Multiple Vector Strategies**: Test different matching algorithms (TF-IDF, Skill-based, Hybrid approaches)
-- **Performance Analytics**: Real-time statistics and processing time measurements
-- **Batch Operations**: Efficient handling of large datasets
+### 🤖 AI-Powered Resume Analysis
 
-### Advanced Matching
+- **OpenAI GPT-4o Integration**: Advanced resume parsing and skill extraction
+- **Multi-format Support**: PDF, DOCX, TXT file processing
+- **Language Detection & Translation**: Automatic language detection with translation support
+- **Intelligent Parsing**: Extracts skills, experience level, role, and industry background
 
-- **Skill Overlap Analysis**: Detailed matching based on technical skills and requirements
-- **Experience Level Compatibility**: Intelligent matching considering years of experience
-- **Industry Alignment**: Match candidates with relevant industry experience
-- **Confidence Scoring**: High/Medium/Low confidence ratings for matches
+### 🔍 Advanced Vector Search
 
-## 🛠 Tech Stack
+- **Semantic Similarity**: Uses OpenAI embeddings for deep contextual understanding
+- **Pinecone Vector Database**: Scalable, high-performance vector search
+- **Cosine Similarity Matching**: Precise relevance scoring between resumes and jobs
+- **Real-time Processing**: Instant job matching with sub-second response times
 
-### Frontend
+### 🎯 Smart Job Matching
 
-- **React 18** with TypeScript for type-safe component development
-- **Vite** for lightning-fast development and optimized builds
-- **Tailwind CSS** with shadcn/ui components for modern, accessible design
-- **TanStack Query** for efficient server state management and caching
-- **Wouter** for lightweight client-side routing
-- **React Hook Form** with Zod validation for robust form handling
+- **MMR (Maximal Marginal Relevance)**: Diversified results to avoid redundancy
+- **Industry Filtering**: Targeted matching within specific industries
+- **Experience Level Alignment**: Matches based on career progression
+- **Confidence Scoring**: High/Medium/Low confidence indicators
 
-### Backend
+### 📊 Performance & Scalability
 
-- **Node.js** with Express.js for the REST API server
-- **TypeScript** throughout the entire stack for type safety
-- **OpenAI GPT-4o** for advanced resume parsing and vector generation
-- **Drizzle ORM** with PostgreSQL for type-safe database operations
-- **Multer** for handling multipart file uploads
-- **Mammoth** for DOCX document processing
-
-### Database & Storage
+- **Memory Optimized**: Efficient resource utilization
+- **Batch Processing**: Handles large datasets (tested up to 100K jobs)
+- **Caching Strategy**: Optimized vector storage and retrieval
+- **Production Ready**: Built for enterprise-scale deployment
 
 - **PostgreSQL** with Neon serverless database support
 - **In-memory storage** for development and testing
@@ -65,6 +60,8 @@ A sophisticated full-stack web application that uses artificial intelligence to 
 
 - Node.js 18+ installed
 - OpenAI API key for resume parsing and vector generation
+- Pinecone index
+- Neon/postgres database connection
 
 ### Environment Setup
 
