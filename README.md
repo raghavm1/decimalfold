@@ -57,7 +57,7 @@ DecimalFold is an AI-powered job matching platform that analyzes resumes and fin
 
 - **PostgreSQL** (Neon) as primary database for jobs, resumes, and matches
 - **Pinecone** vector database for high-performance similarity search
-- (Coming soon) **In-memory processing** for resume files (no persistent file storage)
+- **Resume files stored in database** - full resume text is stored in the `originalText` field
 - Optimized schema with proper indexing for fast queries
 
 ### AI & Machine Learning
@@ -137,24 +137,35 @@ npm run db:push      # Push schema changes to database
 - `GET /api/jobs` - Get paginated job listings with optional filtering
   - Query params: `search`, `experienceLevel`, `workType`, `page`, `limit`
 - `GET /api/jobs/all` - Get all jobs (legacy endpoint)
+- `GET /api/jobs/:id` - Get specific job details by ID
+- `GET /api/jobs/stats` - Get job database statistics
 
 #### Resume Processing
 
 - `POST /api/resume/upload` - Upload and process resume file
-  - Accepts: PDF, DOC, DOCX, TXT files (max 10MB)
+  - Accepts: PDF, DOCX, TXT files (max 2MB)
   - Returns: Parsed resume data, language info, and vector
 
 #### Job Matching
 
-- `POST /api/matches` - Find job matches for processed resume
-  - Body: `{ parsedData, vector, processedText }`
+- `POST /api/resume/:id/matches` - Find job matches for a specific resume ID
   - Returns: Ranked job matches with scores and statistics
+
+#### Vector Strategy Testing
+
+- `POST /api/resume/:id/matches/strategy` - Test different vector strategies
+  - Body: `{ strategy: "tfidf" | "skill" | "hybrid" }`
+- `GET /api/strategies` - Get available matching strategies
 
 #### Job Generation (Development)
 
 - `POST /api/jobs/generate` - Generate sample jobs for testing
-- `POST /api/jobs/generate-tech` - Generate technology-focused jobs
-- `POST /api/jobs/generate-data` - Generate data science jobs
+  - Body: `{ count: number, type: "general" | "tech" | "data" }`
+  - Max count: 100,000 jobs
+
+#### Health Check
+
+- `GET /api/health` - Health check endpoint
 
 ## Data Models
 
@@ -165,16 +176,32 @@ npm run db:push      # Push schema changes to database
   id: number;
   title: string;
   company: string;
+  companySize?: string;        // e.g., "1000+ employees", "100-999 employees"
   location: string;
-  workType: string;        // Full-time, Part-time, Contract, Remote
-  experienceLevel: string; // Entry, Mid, Senior, Leadership
-  salaryMin: number;
-  salaryMax: number;
+  workType: string;           // Full-time, Part-time, Contract, Remote
+  experienceLevel: string;    // Entry Level, Mid-Level, Senior Level, Leadership
+  salaryMin?: number;
+  salaryMax?: number;
   description: string;
   requirements: string;
   skills: string[];
-  industry: string;
-  vector: number[];        // OpenAI embedding
+  postedDate: string;
+  companyLogo?: string;
+  industry: string;           // Default: "Technology"
+  vector?: number[];          // OpenAI embedding (real array)
+}
+```
+
+### Resume Schema
+
+```typescript
+{
+  id: number;
+  fileName: string;
+  originalText: string;       // Full resume text IS stored in database
+  parsedData: ParsedResumeData;
+  vector?: number[];          // OpenAI embedding (real array)
+  uploadedAt: string;
 }
 ```
 
@@ -189,20 +216,53 @@ npm run db:push      # Push schema changes to database
   yearsOfExperience: number;
   languageProcessing?: {
     detectedLanguage: string;
-    wasTranslated: boolean;
+    languageName: string;
     confidence: number;
+    wasTranslated: boolean;
+    translationError?: string;
   };
+}
+```
+
+### Job Match Schema
+
+```typescript
+{
+  id: number;
+  resumeId: number;
+  jobId: number;
+  matchScore: number;         // Real number for similarity score
+  matchingSkills: string[];
+  confidence: string;         // "High", "Medium", "Low"
 }
 ```
 
 ## Production Deployment
 
-The application is designed for deployment on modern platforms:
+### Current Hosting Setup
 
-- **Vercel/Netlify** for frontend static hosting
-- **Railway/Render** for Node.js backend hosting
-- **Neon** for managed PostgreSQL
-- **Pinecone** for managed vector database
+The application is currently deployed using:
+
+- **Vercel** - Frontend hosting with automatic deployments from Git
+- **Render** - Backend API hosting with Node.js runtime
+- **Neon** - Managed PostgreSQL database
+- **Pinecone** - Vector database for similarity search
+
+### Important: Render Cold Start Behavior
+
+⚠️ **Note about backend availability**: The backend is hosted on Render's free tier, which has the following behavior:
+
+- **Automatic Sleep**: The backend service goes to sleep after **15 minutes of inactivity**
+- **Cold Start Delay**: When accessing the application after inactivity, the backend undergoes a **cold start process** that can take up to **1 minute**
+- **User Experience**: During cold start, API requests may timeout or fail until the backend fully boots up
+
+**What this means for users:**
+
+- First-time visitors or users returning after 15+ minutes of site inactivity may experience slow initial load times
+- Retrieving all jobs, resume uploads and job matching may fail on the first attempt after a cold start, but will work after around 50 seconds
+- The application will work normally once the backend has fully started
+
+### Build Optimizations
 
 Build artifacts are optimized with:
 
