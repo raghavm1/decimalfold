@@ -112,7 +112,7 @@ export default function ResumeUpload({
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         [".docx"],
     },
-    maxSize: 10 * 1024 * 1024, // 10MB
+    maxSize: 2 * 1024 * 1024, // 10MB
     multiple: false,
   });
 
@@ -146,7 +146,7 @@ export default function ResumeUpload({
                   : "Drop your resume here or click to browse"}
               </p>
               <p className="text-gray-500 mt-2">
-                Supports PDF, DOCX, and text files up to 10MB
+                Supports PDF, DOCX, and text files up to 2MB
               </p>
             </div>
             <Button
