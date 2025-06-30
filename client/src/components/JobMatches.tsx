@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
   Sparkles,
@@ -35,33 +35,45 @@ export default function JobMatches({
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const findMatchesMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest("POST", `/api/resume/${id}/matches`);
+  // Use React Query to fetch matches with caching
+  const { 
+    data: matchData, 
+    error, 
+    isLoading: isLoadingMatches,
+    refetch
+  } = useQuery({
+    queryKey: ['job-matches', resumeId],
+    queryFn: async () => {
+      if (!resumeId) return null;
+      const response = await apiRequest("POST", `/api/resume/${resumeId}/matches`);
       return response.json();
     },
-    onSuccess: (data) => {
-      onMatchesFound(data);
-      toast({
-        title: "Job matches found",
-        description: `Found ${data.matches.length} relevant job opportunities for you.`,
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Matching failed",
-        description:
-          error.message || "Failed to find job matches. Please try again.",
-        variant: "destructive",
-      });
-    },
+    enabled: !!resumeId && matches.length === 0, // Only fetch if we have resumeId and no existing matches
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    retry: 1,
   });
 
+  // Update parent state when data is fetched
   useEffect(() => {
-    if (resumeId && !findMatchesMutation.isPending) {
-      findMatchesMutation.mutate(resumeId);
+    if (matchData && !error) {
+      onMatchesFound(matchData);
+      toast({
+        title: "Job matches found",
+        description: `Found ${matchData.matches.length} relevant job opportunities for you.`,
+      });
     }
-  }, [resumeId]);
+  }, [matchData, error, onMatchesFound, toast]);
+
+  // Show error toast
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Matching failed", 
+        description: error.message || "Failed to find job matches. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   const getCompanyInitials = (company: string): string => {
     return company
@@ -117,11 +129,11 @@ export default function JobMatches({
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-accent" />
           Top Job Matches
-          {findMatchesMutation.isPending && (
+          {isLoadingMatches && (
             <Loader2 className="w-4 h-4 text-accent animate-spin" />
           )}
           <span className="text-sm font-normal text-gray-500 ml-2">
-            {findMatchesMutation.isPending
+            {isLoadingMatches
               ? "(Finding matches...)"
               : matches.length > 0
               ? `(${matches.length} matches found)`
@@ -130,7 +142,7 @@ export default function JobMatches({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {findMatchesMutation.isPending ? (
+        {isLoadingMatches ? (
           // Loading State
           <div className="space-y-4">
             <div className="text-center py-4">

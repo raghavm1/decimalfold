@@ -191,7 +191,7 @@ export default function Home() {
     const urlParams = new URLSearchParams(searchString);
     const resumeId = urlParams.get("resumeId");
 
-    if (resumeId && !currentResume) {
+    if (resumeId && (!currentResume || currentResume.id.toString() !== resumeId)) {
       // Restore resume state from localStorage
       const savedResume = localStorage.getItem(`resume_${resumeId}`);
       const savedMatches = localStorage.getItem(`matches_${resumeId}`);
@@ -200,8 +200,10 @@ export default function Home() {
       if (savedResume) {
         try {
           const resumeData = JSON.parse(savedResume);
+          
+          // Set all state synchronously to avoid race conditions
           setCurrentResume(resumeData);
-
+          
           // Restore matches if available
           if (savedMatches) {
             const matchesData = JSON.parse(savedMatches);
@@ -215,10 +217,14 @@ export default function Home() {
           }
         } catch (error) {
           console.error("Failed to parse saved data:", error);
+          // Clear corrupted data
+          localStorage.removeItem(`resume_${resumeId}`);
+          localStorage.removeItem(`matches_${resumeId}`);
+          localStorage.removeItem(`stats_${resumeId}`);
         }
       }
     }
-  }, [searchString, currentResume]);
+  }, [searchString]);
 
   // Update total jobs when jobs data is loaded
   useEffect(() => {
