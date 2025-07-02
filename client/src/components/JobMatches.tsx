@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
@@ -34,6 +34,7 @@ export default function JobMatches({
 }: JobMatchesProps) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const hasShownToast = useRef<number | null>(null);
 
   // Use React Query to fetch matches with caching
   const { 
@@ -55,14 +56,26 @@ export default function JobMatches({
 
   // Update parent state when data is fetched
   useEffect(() => {
-    if (matchData && !error) {
+    if (matchData && !error && resumeId) {
       onMatchesFound(matchData);
-      toast({
-        title: "Job matches found",
-        description: `Found ${matchData.matches.length} relevant job opportunities for you.`,
-      });
+      
+      // Only show toast if we haven't shown it for this resume yet
+      if (hasShownToast.current !== resumeId) {
+        hasShownToast.current = resumeId;
+        toast({
+          title: "Job matches found",
+          description: `Found ${matchData.matches.length} relevant job opportunities for you.`,
+        });
+      }
     }
-  }, [matchData, error, onMatchesFound, toast]);
+  }, [matchData, error, resumeId]);
+
+  // Reset toast tracking when resume changes
+  useEffect(() => {
+    if (resumeId && hasShownToast.current !== resumeId) {
+      hasShownToast.current = null;
+    }
+  }, [resumeId]);
 
   // Show error toast
   useEffect(() => {
@@ -73,7 +86,7 @@ export default function JobMatches({
         variant: "destructive",
       });
     }
-  }, [error, toast]);
+  }, [error]);
 
   const getCompanyInitials = (company: string): string => {
     return company
